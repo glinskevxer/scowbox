@@ -1,0 +1,19 @@
+# Exactly what CI installs, including everything the direct dependencies pull in.
+# Regenerate with:
+#
+#   python -m pip install -e ".[dev]" && python -m pip freeze --exclude-editable
+#
+# The direct pins live in pyproject.toml and this file is the closure of them.
+# A patch release of a transitive dependency is not a change this package asked
+# for, and CI is the wrong place to find out about one.
+click==8.1.8
+coverage==7.6.10
+iniconfig==2.0.0
+mypy==1.14.1
+mypy_extensions==1.0.0
+packaging==24.2
+pluggy==1.5.0
+pytest==8.3.4
+pytest-cov==6.0.0
+ruff==0.9.2
+typing_extensions==4.12.2
