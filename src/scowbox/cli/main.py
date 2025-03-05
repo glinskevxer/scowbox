@@ -7,8 +7,10 @@ import sys
 import click
 
 from scowbox import __version__
+from scowbox.cli.reach import reach
 from scowbox.cli.template import template
 from scowbox.errors import ScowboxError, code_of
+from scowbox.store.book import book, counts
 
 
 @click.group()
@@ -35,7 +37,27 @@ def about() -> None:
     click.echo("Surveys and scow box measure in, pay quantities and estimates out.")
 
 
+@cli.command()
+@click.pass_context
+def init(ctx: click.Context) -> None:
+    """Make a project book, or bring an existing one up to date."""
+    where = ctx.obj["book"]
+    with book(where, create=True):
+        pass
+    click.echo(f"book at {where}")
+
+
+@cli.command("counts")
+@click.pass_context
+def show_counts(ctx: click.Context) -> None:
+    """How many rows the book holds, table by table."""
+    with book(ctx.obj["book"]) as connection:
+        for name, number in sorted(counts(connection).items()):
+            click.echo(f"{name:<16}{number:>8,}")
+
+
 cli.add_command(template)
+cli.add_command(reach)
 
 
 def run() -> int:
