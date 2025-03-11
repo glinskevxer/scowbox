@@ -49,6 +49,35 @@ MIGRATIONS: tuple[Migration, ...] = (
             "CREATE INDEX reach_by_group ON reach (pay_group)",
         ),
     ),
+    Migration(
+        2,
+        "surveys",
+        (
+            """
+            CREATE TABLE survey (
+                ident TEXT PRIMARY KEY,
+                reach TEXT NOT NULL REFERENCES reach (ident),
+                kind TEXT NOT NULL,
+                taken_on TEXT NOT NULL,
+                vessel TEXT NOT NULL,
+                transducer_draft REAL NOT NULL,
+                CHECK (transducer_draft > 0)
+            )
+            """,
+            """
+            CREATE TABLE sounding (
+                survey TEXT NOT NULL REFERENCES survey (ident) ON DELETE CASCADE,
+                station INTEGER NOT NULL,
+                offset_ft REAL NOT NULL,
+                raw_depth INTEGER NOT NULL,
+                taken TEXT NOT NULL,
+                CHECK (raw_depth > 0)
+            )
+            """,
+            "CREATE INDEX survey_by_reach ON survey (reach, taken_on)",
+            "CREATE INDEX sounding_by_survey ON sounding (survey, station)",
+        ),
+    ),
 )
 
 
