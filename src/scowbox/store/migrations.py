@@ -78,6 +78,20 @@ MIGRATIONS: tuple[Migration, ...] = (
             "CREATE INDEX sounding_by_survey ON sounding (survey, station)",
         ),
     ),
+    Migration(
+        3,
+        "tides",
+        (
+            """
+            CREATE TABLE tide_reading (
+                gauge TEXT NOT NULL,
+                at TEXT NOT NULL,
+                height REAL NOT NULL,
+                PRIMARY KEY (gauge, at)
+            )
+            """,
+        ),
+    ),
 )
 
 
