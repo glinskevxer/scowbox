@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import click
 
-from scowbox.model.channel import Method, Reach, Template
+from scowbox.cli.options import template_of, template_options
+from scowbox.model.channel import Method, Reach
 from scowbox.store import reaches
 from scowbox.store.book import book
-from scowbox.units.depth import Depth
 from scowbox.units.station import Reachline
 
 
@@ -21,11 +21,7 @@ def reach() -> None:
 @click.argument("name")
 @click.option("--begin", required=True, help="Back station, such as 100+00.")
 @click.option("--end", required=True, help="Ahead station, such as 140+00.")
-@click.option("--bottom", type=float, required=True, help="Bottom width in feet.")
-@click.option("--depth", type=float, required=True, help="Authorized depth in feet.")
-@click.option("--slope", type=float, default=3.0, show_default=True, help="Side slope H:1.")
-@click.option("--advance", type=float, default=0.0, show_default=True, help="Advance feet.")
-@click.option("--overdepth", type=float, default=0.0, show_default=True, help="Paid feet.")
+@template_options
 @click.option(
     "--method",
     type=click.Choice([m.value for m in Method]),
@@ -54,13 +50,7 @@ def add_reach(
         ident=ident,
         name=name,
         line=Reachline.parse(begin, end),
-        template=Template(
-            bottom_width=bottom,
-            authorized_depth=Depth.of_feet(depth),
-            side_slope=slope,
-            advance_maintenance=advance,
-            overdepth=overdepth,
-        ),
+        template=template_of(bottom, depth, slope, advance, overdepth),
         method=Method(method),
         group=group,
     )
