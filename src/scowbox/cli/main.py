@@ -10,6 +10,7 @@ from scowbox import __version__
 from scowbox.cli.reach import reach
 from scowbox.cli.survey import survey
 from scowbox.cli.template import template
+from scowbox.cli.tide import tide
 from scowbox.errors import ScowboxError, code_of
 from scowbox.store.book import book, counts
 
@@ -60,6 +61,7 @@ def show_counts(ctx: click.Context) -> None:
 cli.add_command(template)
 cli.add_command(reach)
 cli.add_command(survey)
+cli.add_command(tide)
 
 
 def run() -> int:

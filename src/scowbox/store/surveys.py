@@ -19,7 +19,7 @@ from scowbox.units.clock import aware
 from scowbox.units.depth import Depth
 from scowbox.units.station import Station
 
-HEADER = "ident, reach, kind, taken_on, vessel, transducer_draft"
+HEADER = "ident, reach, kind, taken_on, vessel, transducer_draft, gauge"
 
 
 def _read_header(row: sqlite3.Row) -> Survey:
@@ -30,6 +30,7 @@ def _read_header(row: sqlite3.Row) -> Survey:
         taken_on=dt.date.fromisoformat(row["taken_on"]),
         vessel=row["vessel"],
         transducer_draft=row["transducer_draft"],
+        gauge=row["gauge"],
     )
 
 
@@ -47,7 +48,7 @@ def add(connection: sqlite3.Connection, survey: Survey) -> None:
     with written(connection):
         try:
             connection.execute(
-                f"INSERT INTO survey ({HEADER}) VALUES (?,?,?,?,?,?)",
+                f"INSERT INTO survey ({HEADER}) VALUES (?,?,?,?,?,?,?)",
                 (
                     survey.ident,
                     survey.reach,
@@ -55,6 +56,7 @@ def add(connection: sqlite3.Connection, survey: Survey) -> None:
                     survey.taken_on.isoformat(),
                     survey.vessel,
                     survey.transducer_draft,
+                    survey.gauge,
                 ),
             )
         except sqlite3.IntegrityError as error:

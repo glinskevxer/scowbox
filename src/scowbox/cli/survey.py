@@ -29,6 +29,7 @@ def survey() -> None:
 @click.option("--on", "taken_on", type=click.DateTime(["%Y-%m-%d"]), required=True)
 @click.option("--vessel", required=True, help="The boat that ran it.")
 @click.option("--draft", type=float, required=True, help="Transducer draft in feet.")
+@click.option("--gauge", default="", help="Gauge the shots reduce against.")
 @click.pass_context
 def add_survey(
     ctx: click.Context,
@@ -38,6 +39,7 @@ def add_survey(
     taken_on: dt.datetime,
     vessel: str,
     draft: float,
+    gauge: str,
 ) -> None:
     """Put a survey header in the book."""
     record = Survey(
@@ -47,6 +49,7 @@ def add_survey(
         taken_on=taken_on.date(),
         vessel=vessel,
         transducer_draft=draft,
+        gauge=gauge,
     )
     with book(ctx.obj["book"]) as connection:
         surveys.add(connection, record)
@@ -100,6 +103,7 @@ def show_survey(ctx: click.Context, ident: str) -> None:
     click.echo(f"{record.ident}  {record.kind.value} of {record.reach}")
     click.echo(f"  taken      {record.taken_on} by {record.vessel}")
     click.echo(f"  draft      {record.transducer_draft:g} ft")
+    click.echo(f"  gauge      {record.gauge or 'none named'}")
     click.echo(f"  soundings  {record.count:,}")
     stations = record.stations()
     if stations:

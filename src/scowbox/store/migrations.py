@@ -92,6 +92,11 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        4,
+        "survey gauge",
+        ("ALTER TABLE survey ADD COLUMN gauge TEXT NOT NULL DEFAULT ''",),
+    ),
 )
 
 

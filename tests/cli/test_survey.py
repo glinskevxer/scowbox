@@ -36,7 +36,7 @@ def run(tmp_path: Path) -> Book:
     made(
         "survey", "add", "SV-0031", "RCH-012",
         "--kind", "before", "--on", "2025-03-14",
-        "--vessel", "Cape Fear", "--draft", "2.5",
+        "--vessel", "Cape Fear", "--draft", "2.5", "--gauge", "8658120",
     )  # fmt: skip
     return made
 
@@ -100,6 +100,19 @@ def test_show_counts_the_shots_and_the_stations(run: Book, tmp_path: Path) -> No
     assert "soundings  3" in out
     assert "2 from 100+00 to 101+00" in out
     assert "pays       yes" in out
+
+
+def test_a_named_gauge_shows_on_the_survey(run: Book) -> None:
+    assert "gauge      8658120" in run("survey", "show", "SV-0031")
+
+
+def test_a_survey_with_no_gauge_says_so(run: Book) -> None:
+    run(
+        "survey", "add", "SV-0033", "RCH-012",
+        "--kind", "sweep", "--on", "2025-03-21",
+        "--vessel", "Cape Fear", "--draft", "2.5",
+    )  # fmt: skip
+    assert "gauge      none named" in run("survey", "show", "SV-0033")
 
 
 def test_a_progress_survey_does_not_pay(run: Book) -> None:

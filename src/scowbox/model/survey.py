@@ -63,6 +63,7 @@ class Survey:
     taken_on: dt.date
     vessel: str
     transducer_draft: float
+    gauge: str = ""
     soundings: tuple[Sounding, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
@@ -74,6 +75,11 @@ class Survey:
             raise FieldError("vessel", "a survey names the vessel that ran it")
         if not 0 < self.transducer_draft <= MAX_DRAFT_FEET:
             raise RangeError("transducer_draft", self.transducer_draft, 0, MAX_DRAFT_FEET)
+
+    @property
+    def reduces(self) -> bool:
+        """True when the survey names the gauge its shots reduce against."""
+        return bool(self.gauge.strip())
 
     @property
     def count(self) -> int:
@@ -97,5 +103,6 @@ class Survey:
             taken_on=self.taken_on,
             vessel=self.vessel,
             transducer_draft=self.transducer_draft,
+            gauge=self.gauge,
             soundings=soundings,
         )
