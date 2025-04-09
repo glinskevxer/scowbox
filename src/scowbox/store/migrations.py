@@ -97,6 +97,32 @@ MIGRATIONS: tuple[Migration, ...] = (
         "survey gauge",
         ("ALTER TABLE survey ADD COLUMN gauge TEXT NOT NULL DEFAULT ''",),
     ),
+    Migration(
+        5,
+        "plant and placement",
+        (
+            """
+            CREATE TABLE scow (
+                ident TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                inside_length REAL NOT NULL,
+                inside_width REAL NOT NULL,
+                inside_depth REAL NOT NULL,
+                CHECK (inside_length > 0 AND inside_width > 0 AND inside_depth > 0)
+            )
+            """,
+            """
+            CREATE TABLE placement_area (
+                ident TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                ground TEXT NOT NULL,
+                permit TEXT NOT NULL,
+                capacity INTEGER
+            )
+            """,
+            "CREATE INDEX placement_by_ground ON placement_area (ground)",
+        ),
+    ),
 )
 
 
