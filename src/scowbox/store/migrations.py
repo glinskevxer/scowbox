@@ -123,6 +123,42 @@ MIGRATIONS: tuple[Migration, ...] = (
             "CREATE INDEX placement_by_ground ON placement_area (ground)",
         ),
     ),
+    Migration(
+        6,
+        "trips",
+        (
+            """
+            CREATE TABLE trip (
+                ident TEXT PRIMARY KEY,
+                scow TEXT NOT NULL REFERENCES scow (ident),
+                reach TEXT NOT NULL REFERENCES reach (ident),
+                loaded_on TEXT NOT NULL,
+                placement TEXT NOT NULL REFERENCES placement_area (ident)
+            )
+            """,
+            """
+            CREATE TABLE box_reading (
+                trip TEXT NOT NULL REFERENCES trip (ident) ON DELETE CASCADE,
+                corner TEXT NOT NULL,
+                light REAL NOT NULL,
+                loaded REAL NOT NULL,
+                PRIMARY KEY (trip, corner)
+            )
+            """,
+            """
+            CREATE TABLE ticket (
+                trip TEXT PRIMARY KEY REFERENCES trip (ident) ON DELETE CASCADE,
+                area TEXT NOT NULL REFERENCES placement_area (ident),
+                released TEXT NOT NULL,
+                yards INTEGER NOT NULL,
+                grade TEXT NOT NULL,
+                CHECK (yards > 0)
+            )
+            """,
+            "CREATE INDEX trip_by_reach ON trip (reach, loaded_on)",
+            "CREATE INDEX ticket_by_area ON ticket (area, released)",
+        ),
+    ),
 )
 
 
