@@ -159,6 +159,42 @@ MIGRATIONS: tuple[Migration, ...] = (
             "CREATE INDEX ticket_by_area ON ticket (area, released)",
         ),
     ),
+    Migration(
+        7,
+        "shifts",
+        (
+            """
+            CREATE TABLE dredge (
+                ident TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                plant TEXT NOT NULL,
+                operator TEXT NOT NULL
+            )
+            """,
+            """
+            CREATE TABLE shift (
+                ident TEXT PRIMARY KEY,
+                dredge TEXT NOT NULL REFERENCES dredge (ident),
+                reach TEXT NOT NULL REFERENCES reach (ident),
+                began TEXT NOT NULL,
+                ended TEXT NOT NULL,
+                CHECK (ended > began)
+            )
+            """,
+            """
+            CREATE TABLE downtime (
+                shift TEXT NOT NULL REFERENCES shift (ident) ON DELETE CASCADE,
+                began TEXT NOT NULL,
+                ended TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                note TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY (shift, began)
+            )
+            """,
+            "CREATE INDEX shift_by_day ON shift (began)",
+            "CREATE INDEX shift_by_reach ON shift (reach, began)",
+        ),
+    ),
 )
 
 
