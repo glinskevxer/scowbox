@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import sqlite3
 
-from scowbox.errors import DuplicateError, MissingError
+from scowbox.errors import MissingError
 from scowbox.model.channel import Method, Reach, Template
 from scowbox.store.sqlite import rows, written
+from scowbox.store.writing import inserting
 from scowbox.units.depth import Depth
 from scowbox.units.station import Reachline, Station
 
@@ -35,26 +36,23 @@ def _read(row: sqlite3.Row) -> Reach:
 
 def add(connection: sqlite3.Connection, reach: Reach) -> None:
     """Write a reach that is not in the book yet."""
-    with written(connection):
-        try:
-            connection.execute(
-                f"INSERT INTO reach ({COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    reach.ident,
-                    reach.name,
-                    reach.line.begin.hundredths,
-                    reach.line.end.hundredths,
-                    reach.template.bottom_width,
-                    reach.template.authorized_depth.hundredths,
-                    reach.template.side_slope,
-                    reach.template.advance_maintenance,
-                    reach.template.overdepth,
-                    reach.method.value,
-                    reach.group,
-                ),
-            )
-        except sqlite3.IntegrityError:
-            raise DuplicateError("reach", reach.ident) from None
+    with written(connection), inserting("reach", reach.ident):
+        connection.execute(
+            f"INSERT INTO reach ({COLUMNS}) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                reach.ident,
+                reach.name,
+                reach.line.begin.hundredths,
+                reach.line.end.hundredths,
+                reach.template.bottom_width,
+                reach.template.authorized_depth.hundredths,
+                reach.template.side_slope,
+                reach.template.advance_maintenance,
+                reach.template.overdepth,
+                reach.method.value,
+                reach.group,
+            ),
+        )
 
 
 def get(connection: sqlite3.Connection, ident: str) -> Reach:

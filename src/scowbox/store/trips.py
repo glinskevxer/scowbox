@@ -13,10 +13,11 @@ import datetime as dt
 import sqlite3
 from collections.abc import Sequence
 
-from scowbox.errors import DuplicateError, MissingError
+from scowbox.errors import MissingError
 from scowbox.model.placement import Grade, PlacementTicket
 from scowbox.model.scow import BoxReading, Corner, ScowTrip
 from scowbox.store.sqlite import rows, written
+from scowbox.store.writing import inserting
 from scowbox.units.clock import aware
 from scowbox.units.volume import Yards
 
@@ -47,7 +48,7 @@ def _read_ticket(row: sqlite3.Row) -> PlacementTicket:
 def add(connection: sqlite3.Connection, trip: ScowTrip) -> None:
     """Write a trip, and its box readings if it is carrying any."""
     with written(connection):
-        try:
+        with inserting("trip", trip.ident, references="scow, reach or placement area for"):
             connection.execute(
                 f"INSERT INTO trip ({COLUMNS}) VALUES (?,?,?,?,?)",
                 (
@@ -58,10 +59,6 @@ def add(connection: sqlite3.Connection, trip: ScowTrip) -> None:
                     trip.placement,
                 ),
             )
-        except sqlite3.IntegrityError as error:
-            if "FOREIGN KEY" in str(error):
-                raise MissingError("scow, reach or placement area for", trip.ident) from None
-            raise DuplicateError("trip", trip.ident) from None
         _write_readings(connection, trip.ident, trip.readings)
 
 
@@ -123,22 +120,20 @@ def between(connection: sqlite3.Connection, first: dt.date, last: dt.date) -> tu
 def release(connection: sqlite3.Connection, ticket: PlacementTicket) -> None:
     """Write the ticket that closes a trip out."""
     get(connection, ticket.trip)
-    with written(connection):
-        try:
-            connection.execute(
-                f"INSERT INTO ticket ({TICKET_COLUMNS}) VALUES (?,?,?,?,?)",
-                (
-                    ticket.trip,
-                    ticket.area,
-                    aware(ticket.released).isoformat(),
-                    ticket.yards.hundredths,
-                    ticket.grade.value,
-                ),
-            )
-        except sqlite3.IntegrityError as error:
-            if "FOREIGN KEY" in str(error):
-                raise MissingError("placement area", ticket.area) from None
-            raise DuplicateError("ticket for trip", ticket.trip) from None
+    with (
+        written(connection),
+        inserting("ticket for trip", ticket.trip, references="placement area"),
+    ):
+        connection.execute(
+            f"INSERT INTO ticket ({TICKET_COLUMNS}) VALUES (?,?,?,?,?)",
+            (
+                ticket.trip,
+                ticket.area,
+                aware(ticket.released).isoformat(),
+                ticket.yards.hundredths,
+                ticket.grade.value,
+            ),
+        )
 
 
 def ticket_of(connection: sqlite3.Connection, trip: str) -> PlacementTicket:

@@ -12,9 +12,10 @@ import datetime as dt
 import sqlite3
 from collections.abc import Sequence
 
-from scowbox.errors import DuplicateError, MissingError
+from scowbox.errors import MissingError
 from scowbox.model.survey import Sounding, Survey, SurveyKind
 from scowbox.store.sqlite import rows, written
+from scowbox.store.writing import inserting
 from scowbox.units.clock import aware
 from scowbox.units.depth import Depth
 from scowbox.units.station import Station
@@ -46,7 +47,7 @@ def _read_sounding(row: sqlite3.Row) -> Sounding:
 def add(connection: sqlite3.Connection, survey: Survey) -> None:
     """Write a survey header, and its shots if it is carrying any."""
     with written(connection):
-        try:
+        with inserting("survey", survey.ident, references="reach"):
             connection.execute(
                 f"INSERT INTO survey ({HEADER}) VALUES (?,?,?,?,?,?,?)",
                 (
@@ -59,10 +60,6 @@ def add(connection: sqlite3.Connection, survey: Survey) -> None:
                     survey.gauge,
                 ),
             )
-        except sqlite3.IntegrityError as error:
-            if "FOREIGN KEY" in str(error):
-                raise MissingError("reach", survey.reach) from None
-            raise DuplicateError("survey", survey.ident) from None
         _write_soundings(connection, survey.ident, survey.soundings)
 
 

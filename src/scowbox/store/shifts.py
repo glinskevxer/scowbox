@@ -11,10 +11,11 @@ import datetime as dt
 import sqlite3
 from collections.abc import Sequence
 
-from scowbox.errors import DuplicateError, MissingError
+from scowbox.errors import MissingError
 from scowbox.model.plant import Dredge, Plant
 from scowbox.model.shift import Downtime, Reason, Shift
 from scowbox.store.sqlite import rows, written
+from scowbox.store.writing import inserting
 from scowbox.units.clock import aware
 
 DREDGE_COLUMNS = "ident, name, plant, operator"
@@ -50,14 +51,11 @@ def _read_downtime(row: sqlite3.Row) -> Downtime:
 
 
 def add_dredge(connection: sqlite3.Connection, dredge: Dredge) -> None:
-    with written(connection):
-        try:
-            connection.execute(
-                f"INSERT INTO dredge ({DREDGE_COLUMNS}) VALUES (?,?,?,?)",
-                (dredge.ident, dredge.name, dredge.plant.value, dredge.operator),
-            )
-        except sqlite3.IntegrityError:
-            raise DuplicateError("dredge", dredge.ident) from None
+    with written(connection), inserting("dredge", dredge.ident):
+        connection.execute(
+            f"INSERT INTO dredge ({DREDGE_COLUMNS}) VALUES (?,?,?,?)",
+            (dredge.ident, dredge.name, dredge.plant.value, dredge.operator),
+        )
 
 
 def dredge(connection: sqlite3.Connection, ident: str) -> Dredge:
@@ -75,7 +73,7 @@ def dredges(connection: sqlite3.Connection) -> tuple[Dredge, ...]:
 def add(connection: sqlite3.Connection, shift: Shift) -> None:
     """Write a shift and its interruptions."""
     with written(connection):
-        try:
+        with inserting("shift", shift.ident, references="dredge or reach for"):
             connection.execute(
                 f"INSERT INTO shift ({SHIFT_COLUMNS}) VALUES (?,?,?,?,?)",
                 (
@@ -86,10 +84,6 @@ def add(connection: sqlite3.Connection, shift: Shift) -> None:
                     aware(shift.ended).isoformat(),
                 ),
             )
-        except sqlite3.IntegrityError as error:
-            if "FOREIGN KEY" in str(error):
-                raise MissingError("dredge or reach for", shift.ident) from None
-            raise DuplicateError("shift", shift.ident) from None
         _write_downtimes(connection, shift.ident, shift.downtimes)
 
 

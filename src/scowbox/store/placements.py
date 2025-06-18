@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import sqlite3
 
-from scowbox.errors import DuplicateError, MissingError
+from scowbox.errors import MissingError
 from scowbox.model.placement import Ground, PlacementArea
 from scowbox.store.sqlite import rows, written
+from scowbox.store.writing import inserting
 from scowbox.units.volume import Yards
 
 COLUMNS = "ident, name, ground, permit, capacity"
@@ -30,20 +31,17 @@ def _read(row: sqlite3.Row) -> PlacementArea:
 
 def add(connection: sqlite3.Connection, area: PlacementArea) -> None:
     """Write a placement area that is not in the book yet."""
-    with written(connection):
-        try:
-            connection.execute(
-                f"INSERT INTO placement_area ({COLUMNS}) VALUES (?,?,?,?,?)",
-                (
-                    area.ident,
-                    area.name,
-                    area.ground.value,
-                    area.permit,
-                    None if area.capacity is None else area.capacity.hundredths,
-                ),
-            )
-        except sqlite3.IntegrityError:
-            raise DuplicateError("placement area", area.ident) from None
+    with written(connection), inserting("placement area", area.ident):
+        connection.execute(
+            f"INSERT INTO placement_area ({COLUMNS}) VALUES (?,?,?,?,?)",
+            (
+                area.ident,
+                area.name,
+                area.ground.value,
+                area.permit,
+                None if area.capacity is None else area.capacity.hundredths,
+            ),
+        )
 
 
 def get(connection: sqlite3.Connection, ident: str) -> PlacementArea:
