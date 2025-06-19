@@ -195,6 +195,48 @@ MIGRATIONS: tuple[Migration, ...] = (
             "CREATE INDEX shift_by_reach ON shift (reach, began)",
         ),
     ),
+    Migration(
+        8,
+        "windows and contract",
+        (
+            """
+            CREATE TABLE window_period (
+                name TEXT NOT NULL,
+                reach TEXT NOT NULL DEFAULT '',
+                begins TEXT NOT NULL,
+                ends TEXT NOT NULL,
+                restriction TEXT NOT NULL,
+                authority TEXT NOT NULL,
+                PRIMARY KEY (name, reach, begins),
+                CHECK (ends >= begins)
+            )
+            """,
+            """
+            CREATE TABLE contract (
+                number TEXT PRIMARY KEY,
+                awarded TEXT NOT NULL,
+                notice_to_proceed TEXT NOT NULL,
+                days INTEGER NOT NULL,
+                retainage REAL NOT NULL,
+                liquidated INTEGER NOT NULL,
+                CHECK (days > 0)
+            )
+            """,
+            """
+            CREATE TABLE line_item (
+                ident TEXT NOT NULL,
+                contract TEXT NOT NULL REFERENCES contract (number) ON DELETE CASCADE,
+                description TEXT NOT NULL,
+                unit TEXT NOT NULL,
+                unit_price INTEGER NOT NULL,
+                pay_group TEXT NOT NULL DEFAULT '',
+                estimated REAL NOT NULL DEFAULT 0,
+                PRIMARY KEY (contract, ident),
+                CHECK (unit_price > 0)
+            )
+            """,
+        ),
+    ),
 )
 
 
