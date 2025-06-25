@@ -237,6 +237,38 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        9,
+        "estimates",
+        (
+            """
+            CREATE TABLE estimate (
+                ident TEXT PRIMARY KEY,
+                contract TEXT NOT NULL REFERENCES contract (number),
+                number INTEGER NOT NULL,
+                through TEXT NOT NULL,
+                retainage REAL NOT NULL,
+                days_late INTEGER NOT NULL DEFAULT 0,
+                liquidated_rate INTEGER NOT NULL DEFAULT 0,
+                paid_before INTEGER NOT NULL DEFAULT 0,
+                UNIQUE (contract, number),
+                CHECK (number > 0)
+            )
+            """,
+            """
+            CREATE TABLE estimate_line (
+                estimate TEXT NOT NULL REFERENCES estimate (ident) ON DELETE CASCADE,
+                item TEXT NOT NULL,
+                description TEXT NOT NULL,
+                unit TEXT NOT NULL,
+                unit_price INTEGER NOT NULL,
+                to_date REAL NOT NULL,
+                previous REAL NOT NULL DEFAULT 0,
+                PRIMARY KEY (estimate, item)
+            )
+            """,
+        ),
+    ),
 )
 
 
