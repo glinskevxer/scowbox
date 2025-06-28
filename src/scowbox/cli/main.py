@@ -7,7 +7,9 @@ import sys
 import click
 
 from scowbox import __version__
+from scowbox.cli.placement import placement
 from scowbox.cli.reach import reach
+from scowbox.cli.scow import scow, trip
 from scowbox.cli.survey import survey
 from scowbox.cli.template import template
 from scowbox.cli.tide import tide
@@ -62,6 +64,9 @@ cli.add_command(template)
 cli.add_command(reach)
 cli.add_command(survey)
 cli.add_command(tide)
+cli.add_command(placement)
+cli.add_command(scow)
+cli.add_command(trip)
 
 
 def run() -> int:
