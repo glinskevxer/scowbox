@@ -10,9 +10,11 @@ from scowbox import __version__
 from scowbox.cli.placement import placement
 from scowbox.cli.reach import reach
 from scowbox.cli.scow import scow, trip
+from scowbox.cli.shift import shift
 from scowbox.cli.survey import survey
 from scowbox.cli.template import template
 from scowbox.cli.tide import tide
+from scowbox.cli.window import window
 from scowbox.errors import ScowboxError, code_of
 from scowbox.store.book import book, counts
 
@@ -67,6 +69,8 @@ cli.add_command(tide)
 cli.add_command(placement)
 cli.add_command(scow)
 cli.add_command(trip)
+cli.add_command(shift)
+cli.add_command(window)
 
 
 def run() -> int:

@@ -118,6 +118,12 @@ def test_trips_of_a_reach_come_back_oldest_first(open_book: sqlite3.Connection) 
     ]
 
 
+def test_every_trip_in_the_book_is_listed(open_book: sqlite3.Connection) -> None:
+    trips.add(open_book, a_trip("TR-04190", dt.date(2025, 4, 5)))
+    trips.add(open_book, a_trip("TR-04188"))
+    assert [t.ident for t in trips.listed(open_book)] == ["TR-04188", "TR-04190"]
+
+
 def test_a_period_takes_both_its_ends(open_book: sqlite3.Connection) -> None:
     trips.add(open_book, a_trip("TR-04188", dt.date(2025, 4, 2)))
     trips.add(open_book, a_trip("TR-04190", dt.date(2025, 4, 5)))

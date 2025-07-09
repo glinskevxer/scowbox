@@ -107,6 +107,12 @@ def for_reach(connection: sqlite3.Connection, reach: str) -> tuple[ScowTrip, ...
     return tuple(get(connection, row["ident"]) for row in found)
 
 
+def listed(connection: sqlite3.Connection) -> tuple[ScowTrip, ...]:
+    """Every trip in the book, oldest first."""
+    found = rows(connection, f"SELECT {COLUMNS} FROM trip ORDER BY loaded_on, ident")
+    return tuple(get(connection, row["ident"]) for row in found)
+
+
 def between(connection: sqlite3.Connection, first: dt.date, last: dt.date) -> tuple[ScowTrip, ...]:
     """Every trip loaded in a period, both ends included."""
     found = rows(

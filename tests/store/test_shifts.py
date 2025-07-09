@@ -132,6 +132,12 @@ def test_a_period_takes_both_its_ends(open_book: sqlite3.Connection) -> None:
     assert [s.ident for s in found] == ["SH-00021", "SH-00022"]
 
 
+def test_every_shift_in_the_book_is_listed(open_book: sqlite3.Connection) -> None:
+    shifts.add(open_book, a_shift("SH-00022", NEXT))
+    shifts.add(open_book, a_shift("SH-00021", DAY))
+    assert [s.ident for s in shifts.listed(open_book)] == ["SH-00021", "SH-00022"]
+
+
 def test_shifts_of_a_reach_come_back_oldest_first(open_book: sqlite3.Connection) -> None:
     shifts.add(open_book, a_shift("SH-00022", NEXT))
     shifts.add(open_book, a_shift("SH-00021", DAY))

@@ -149,11 +149,7 @@ def release_trip(
 def list_trips(ctx: click.Context, reach: str | None) -> None:
     """Trips in the book, oldest first."""
     with book(ctx.obj["book"]) as connection:
-        found = (
-            trips.for_reach(connection, reach)
-            if reach
-            else trips.between(connection, dt.date.min, dt.date.max)
-        )
+        found = trips.for_reach(connection, reach) if reach else trips.listed(connection)
         waiting = set(trips.untick(connection))
     if not found:
         click.echo("no trips")

@@ -152,6 +152,12 @@ def between(connection: sqlite3.Connection, first: dt.date, last: dt.date) -> tu
     return tuple(get(connection, row["ident"]) for row in found)
 
 
+def listed(connection: sqlite3.Connection) -> tuple[Shift, ...]:
+    """Every shift in the book, oldest first."""
+    found = rows(connection, f"SELECT {SHIFT_COLUMNS} FROM shift ORDER BY began")
+    return tuple(get(connection, row["ident"]) for row in found)
+
+
 def for_reach(connection: sqlite3.Connection, reach: str) -> tuple[Shift, ...]:
     found = rows(
         connection,
