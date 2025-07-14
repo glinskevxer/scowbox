@@ -5,29 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
 
-from scowbox.cli.main import cli
-
-
-class Book:
-    def __init__(self, path: Path) -> None:
-        self.path = str(path)
-        self.runner = CliRunner()
-
-    def __call__(self, *args: str, ok: bool = True) -> str:
-        result = self.runner.invoke(cli, ["--book", self.path, *args], obj={})
-        if ok:
-            assert result.exit_code == 0, result.output + str(result.exception)
-        else:
-            assert result.exit_code != 0
-        return result.output
+from tests.cli.runner import Book, a_book
 
 
 @pytest.fixture
 def run(tmp_path: Path) -> Book:
-    made = Book(tmp_path / "book.sqlite3")
-    made("init")
+    made = a_book(tmp_path)
     made(
         "reach", "add", "RCH-012", "Lower Range",
         "--begin", "100+00", "--end", "140+00",
@@ -35,11 +19,6 @@ def run(tmp_path: Path) -> Book:
     )  # fmt: skip
     made("scow", "add", "SC-004", "Dixie 41", "--length", "180", "--width", "42", "--depth", "14")
     return made
-
-
-def add_area(run: Book) -> None:
-    with_book = run.path
-    assert with_book
 
 
 def a_trip(run: Book, ident: str = "TR-04188") -> None:
@@ -56,8 +35,7 @@ def test_an_added_scow_shows_up(run: Book) -> None:
 
 
 def test_an_empty_fleet_says_so(tmp_path: Path) -> None:
-    fresh = Book(tmp_path / "empty.sqlite3")
-    fresh("init")
+    fresh = a_book(tmp_path, "empty.sqlite3")
     assert "no scows" in fresh("scow", "list")
 
 

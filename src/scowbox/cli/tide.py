@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
+
 import click
 
 from scowbox.feed.tides import parse_file
@@ -52,8 +54,6 @@ def list_tides(ctx: click.Context) -> None:
 @click.pass_context
 def tide_at(ctx: click.Context, gauge: str, when: str) -> None:
     """The interpolated height at one moment, as the reduction would use it."""
-    import datetime as dt
-
     moment = dt.datetime.fromisoformat(when)
     with book(ctx.obj["book"]) as connection:
         record = tides.record_for(connection, gauge, moment, moment)

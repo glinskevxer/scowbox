@@ -5,29 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
 
-from scowbox.cli.main import cli
-
-
-class Book:
-    def __init__(self, path: Path) -> None:
-        self.path = str(path)
-        self.runner = CliRunner()
-
-    def __call__(self, *args: str, ok: bool = True) -> str:
-        result = self.runner.invoke(cli, ["--book", self.path, *args], obj={})
-        if ok:
-            assert result.exit_code == 0, result.output + str(result.exception)
-        else:
-            assert result.exit_code != 0
-        return result.output
+from tests.cli.runner import Book, a_book
 
 
 @pytest.fixture
 def run(tmp_path: Path) -> Book:
-    made = Book(tmp_path / "book.sqlite3")
-    made("init")
+    made = a_book(tmp_path)
     made(
         "reach", "add", "RCH-012", "Lower Range",
         "--begin", "100+00", "--end", "140+00", "--bottom", "400", "--depth", "42",
@@ -76,8 +60,7 @@ def test_shifts_are_listed_with_their_effective_hours(run: Book) -> None:
 
 
 def test_an_empty_book_says_so(tmp_path: Path) -> None:
-    fresh = Book(tmp_path / "empty.sqlite3")
-    fresh("init")
+    fresh = a_book(tmp_path, "empty.sqlite3")
     assert "no shifts" in fresh("shift", "list")
 
 

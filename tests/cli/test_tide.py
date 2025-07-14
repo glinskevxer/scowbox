@@ -5,32 +5,15 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
 
-from scowbox.cli.main import cli
+from tests.cli.runner import Book, a_book
 
 HEAD = "Date Time,Water Level,Sigma,O,F,R,L,Quality"
 
 
-class Book:
-    def __init__(self, path: Path) -> None:
-        self.path = str(path)
-        self.runner = CliRunner()
-
-    def __call__(self, *args: str, ok: bool = True) -> str:
-        result = self.runner.invoke(cli, ["--book", self.path, *args], obj={})
-        if ok:
-            assert result.exit_code == 0, result.output + str(result.exception)
-        else:
-            assert result.exit_code != 0
-        return result.output
-
-
 @pytest.fixture
 def run(tmp_path: Path) -> Book:
-    made = Book(tmp_path / "book.sqlite3")
-    made("init")
-    return made
+    return a_book(tmp_path)
 
 
 def a_download(where: Path, *rows: str) -> str:

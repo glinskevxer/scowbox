@@ -7,6 +7,7 @@ import datetime as dt
 import click
 
 from scowbox.boxmeasure.box import measure
+from scowbox.errors import MissingError
 from scowbox.model.placement import Grade, PlacementTicket
 from scowbox.model.scow import BoxReading, Corner, Scow, ScowTrip
 from scowbox.store import scows, trips
@@ -186,7 +187,7 @@ def show_trip(ctx: click.Context, ident: str) -> None:
         got = measure(fleet, held) if held.measured else None
         try:
             ticket = trips.ticket_of(connection, ident)
-        except Exception:  # noqa: BLE001
+        except MissingError:
             ticket = None
     click.echo(f"{held.ident}  {held.loaded_on}")
     click.echo(f"  scow       {fleet.describe()}")

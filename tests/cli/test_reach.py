@@ -5,32 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
 
-from scowbox.cli.main import cli
-
-
-class Book:
-    """A runner bound to one book file, so every call sees the same project."""
-
-    def __init__(self, path: Path) -> None:
-        self.path = str(path)
-        self.runner = CliRunner()
-
-    def __call__(self, *args: str, ok: bool = True) -> str:
-        result = self.runner.invoke(cli, ["--book", self.path, *args], obj={})
-        if ok:
-            assert result.exit_code == 0, result.output + str(result.exception)
-        else:
-            assert result.exit_code != 0
-        return result.output
+from tests.cli.runner import Book, a_book
 
 
 @pytest.fixture
 def run(tmp_path: Path) -> Book:
-    made = Book(tmp_path / "book.sqlite3")
-    made("init")
-    return made
+    return a_book(tmp_path)
 
 
 ADD = [
@@ -54,9 +35,8 @@ ADD = [
 
 
 def test_init_makes_a_book(tmp_path: Path) -> None:
-    where = tmp_path / "new.sqlite3"
-    Book(where)("init")
-    assert where.exists()
+    a_book(tmp_path, "new.sqlite3")
+    assert (tmp_path / "new.sqlite3").exists()
 
 
 def test_a_command_against_a_book_that_is_not_there_fails(tmp_path: Path) -> None:
