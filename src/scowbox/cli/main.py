@@ -8,6 +8,7 @@ import click
 
 from scowbox import __version__
 from scowbox.cli.placement import placement
+from scowbox.cli.quantity import quantity
 from scowbox.cli.reach import reach
 from scowbox.cli.scow import scow, trip
 from scowbox.cli.shift import shift
@@ -70,6 +71,7 @@ cli.add_command(placement)
 cli.add_command(scow)
 cli.add_command(trip)
 cli.add_command(shift)
+cli.add_command(quantity)
 cli.add_command(window)
 
 
