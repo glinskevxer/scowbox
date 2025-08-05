@@ -63,6 +63,38 @@ def add(connection: sqlite3.Connection, contract: Contract) -> None:
                 )
 
 
+def add_item(connection: sqlite3.Connection, number: str, item: LineItem) -> None:
+    """Add one line to a bid schedule already in the book.
+
+    The whole contract is rebuilt in memory first so that the rules about
+    duplicate identifiers and one cubic yard item per pay group are the same
+    rules whether the schedule arrives all at once or a line at a time.
+    """
+    held = get(connection, number)
+    Contract(
+        number=held.number,
+        awarded=held.awarded,
+        notice_to_proceed=held.notice_to_proceed,
+        days=held.days,
+        retainage=held.retainage,
+        liquidated=held.liquidated,
+        items=(*held.items, item),
+    )
+    with written(connection), inserting("line item", item.ident, references="contract"):
+        connection.execute(
+            f"INSERT INTO line_item ({ITEM}) VALUES (?,?,?,?,?,?,?)",
+            (
+                item.ident,
+                number,
+                item.description,
+                item.unit.value,
+                item.unit_price.cents,
+                item.group,
+                item.estimated,
+            ),
+        )
+
+
 def get(connection: sqlite3.Connection, number: str) -> Contract:
     """A contract with every line item on it."""
     found = rows(connection, f"SELECT {HEADER} FROM contract WHERE number = ?", (number,))

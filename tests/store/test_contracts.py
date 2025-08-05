@@ -15,6 +15,7 @@ from scowbox.store import contracts
 from scowbox.store.book import book
 from scowbox.units.money import Money
 
+NUMBER = "W912PM-25-C-0014"
 AWARD = dt.date(2025, 1, 20)
 NTP = dt.date(2025, 2, 3)
 
@@ -25,7 +26,7 @@ def open_book(tmp_path: Path) -> Iterator[sqlite3.Connection]:
         yield connection
 
 
-def a_contract(number: str = "W912PM-25-C-0014") -> Contract:
+def a_contract(number: str = NUMBER) -> Contract:
     return Contract(
         number=number,
         awarded=AWARD,
@@ -78,6 +79,45 @@ def test_two_contracts_may_use_the_same_line_item_numbers(
     second = contracts.get(open_book, "W912PM-25-C-0020")
     assert first.item("LI-0001") == second.item("LI-0001")
     assert len(first.items) == 2
+
+
+def test_a_line_can_be_added_to_a_schedule_already_written(
+    open_book: sqlite3.Connection,
+) -> None:
+    contracts.add(open_book, a_contract())
+    contracts.add_item(
+        open_book,
+        NUMBER,
+        LineItem(
+            "LI-0002", "Dredging, entrance", Unit.CUBIC_YARD, Money.parse("$9.10"), "entrance"
+        ),
+    )
+    assert len(contracts.get(open_book, NUMBER).items) == 3
+
+
+def test_a_line_that_breaks_the_schedule_rules_is_refused(
+    open_book: sqlite3.Connection,
+) -> None:
+    contracts.add(open_book, a_contract())
+    with pytest.raises(DuplicateError):
+        contracts.add_item(
+            open_book,
+            NUMBER,
+            LineItem(
+                "LI-0002", "Dredging, base again", Unit.CUBIC_YARD, Money.parse("$9.10"), "base"
+            ),
+        )
+
+
+def test_a_line_on_a_contract_that_is_not_there_is_refused(
+    open_book: sqlite3.Connection,
+) -> None:
+    with pytest.raises(MissingError):
+        contracts.add_item(
+            open_book,
+            "W912PM-25-C-0099",
+            LineItem("LI-0002", "Dredging", Unit.LUMP_SUM, Money.parse("$1.00")),
+        )
 
 
 def test_the_numbers_come_back_in_order(open_book: sqlite3.Connection) -> None:

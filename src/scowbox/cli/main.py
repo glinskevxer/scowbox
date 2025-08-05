@@ -7,6 +7,8 @@ import sys
 import click
 
 from scowbox import __version__
+from scowbox.cli.contract import contract
+from scowbox.cli.estimate import estimate
 from scowbox.cli.placement import placement
 from scowbox.cli.quantity import quantity
 from scowbox.cli.reach import reach
@@ -72,6 +74,8 @@ cli.add_command(scow)
 cli.add_command(trip)
 cli.add_command(shift)
 cli.add_command(quantity)
+cli.add_command(contract)
+cli.add_command(estimate)
 cli.add_command(window)
 
 
