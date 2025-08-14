@@ -12,6 +12,7 @@ from scowbox.cli.estimate import estimate
 from scowbox.cli.placement import placement
 from scowbox.cli.quantity import quantity
 from scowbox.cli.reach import reach
+from scowbox.cli.report import report
 from scowbox.cli.scow import scow, trip
 from scowbox.cli.shift import shift
 from scowbox.cli.survey import survey
@@ -76,6 +77,7 @@ cli.add_command(shift)
 cli.add_command(quantity)
 cli.add_command(contract)
 cli.add_command(estimate)
+cli.add_command(report)
 cli.add_command(window)
 
 
