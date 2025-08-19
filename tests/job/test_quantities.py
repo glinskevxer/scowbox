@@ -174,6 +174,16 @@ def test_a_deduction_reaches_the_scow_side(open_book: sqlite3.Connection) -> Non
     assert docked.quantity < plain.quantity
 
 
+def test_a_scow_reach_with_no_trips_is_unmeasured_not_zero(
+    open_book: sqlite3.Connection,
+) -> None:
+    reaches.remove(open_book, "RCH-012")
+    reaches.add(open_book, a_reach(method=Method.SCOW))
+    with pytest.raises(MissingError, match="scow trip out of"):
+        determine_reach(open_book, "RCH-012", SILT)
+    assert by_group(open_book, SILT) == {}
+
+
 def test_quantities_gather_into_pay_groups(open_book: sqlite3.Connection) -> None:
     load_surveys(open_book)
     gathered = by_group(open_book, SILT)

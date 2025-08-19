@@ -7,8 +7,10 @@ import datetime as dt
 import click
 
 from scowbox.boxmeasure.bulking import materials, typical
+from scowbox.report import audit as audit_report
 from scowbox.report import day as day_report
 from scowbox.report import reach as reach_report
+from scowbox.report import season as season_report
 from scowbox.store.book import book
 
 
@@ -37,5 +39,33 @@ def reach(ctx: click.Context, ident: str, material: str, deduction: float) -> No
     """One reach, its records and its quantity."""
     with book(ctx.obj["book"]) as connection:
         lines = reach_report.render(connection, ident, typical(material), deduction=deduction)
+    for line in lines:
+        click.echo(line)
+
+
+@report.command("season")
+@click.option("--material", type=click.Choice(materials()), default="silt", show_default=True)
+@click.option("--deduction", type=float, default=0.0, show_default=True)
+@click.pass_context
+def season(ctx: click.Context, material: str, deduction: float) -> None:
+    """Where the job stands today."""
+    with book(ctx.obj["book"]) as connection:
+        lines = season_report.render(connection, typical(material), deduction=deduction)
+    for line in lines:
+        click.echo(line)
+
+
+@report.command("audit")
+@click.option(
+    "--closed-through",
+    type=click.DateTime(["%Y-%m-%d"]),
+    default=None,
+    help="Day the month closed, after which a missing ticket is a violation.",
+)
+@click.pass_context
+def audit(ctx: click.Context, closed_through: dt.datetime | None) -> None:
+    """Every place the records and the permits disagree."""
+    with book(ctx.obj["book"]) as connection:
+        lines = audit_report.render(connection, closed_through.date() if closed_through else None)
     for line in lines:
         click.echo(line)

@@ -89,11 +89,17 @@ def scow_side(
     *,
     deduction: float = 0.0,
 ) -> ScowQuantity:
-    """Work the trips out of a reach up into a quantity."""
+    """Work the trips out of a reach up into a quantity.
+
+    No trips at all is not a quantity of nothing. A scow measured reach nobody
+    has worked yet has not been measured, and billing it at zero reads on the
+    estimate exactly like a reach that was worked and came to nothing.
+    """
     fleet = {scow.ident: scow for scow in scows.listed(connection)}
-    return scow_quantity(
-        reach, fleet, trips.for_reach(connection, reach.ident), bulking, deduction=deduction
-    )
+    hauled = trips.for_reach(connection, reach.ident)
+    if not hauled:
+        raise MissingError("scow trip out of", reach.ident)
+    return scow_quantity(reach, fleet, hauled, bulking, deduction=deduction)
 
 
 def determine_reach(
