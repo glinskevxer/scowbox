@@ -14,6 +14,7 @@ WIDTH = 78
 
 
 def rule(character: str = "-") -> str:
+    """A horizontal rule the full width of the page."""
     return character * WIDTH
 
 
@@ -60,8 +61,10 @@ def _numeric(text: str) -> bool:
 
 
 def indent(lines: Iterable[str], by: int = 2) -> list[str]:
+    """Push lines in, leaving blank ones alone so they stay blank."""
     return [" " * by + line if line else line for line in lines]
 
 
 def blank() -> str:
+    """An empty line, named so a report reads as a list of lines."""
     return ""

@@ -60,4 +60,5 @@ def typical(material: str) -> Bulking:
 
 
 def materials() -> tuple[str, ...]:
+    """Every material a starting factor is published for."""
     return tuple(b.material for b in TYPICAL)

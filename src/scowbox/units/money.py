@@ -87,4 +87,5 @@ def extend(unit_price: Money, quantity: Yards) -> Money:
 
 
 def total(amounts: Iterable[Money]) -> Money:
+    """Add a run of amounts without losing a cent on the way."""
     return Money(sum(a.cents for a in amounts))

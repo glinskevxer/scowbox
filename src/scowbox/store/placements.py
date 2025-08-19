@@ -45,6 +45,7 @@ def add(connection: sqlite3.Connection, area: PlacementArea) -> None:
 
 
 def get(connection: sqlite3.Connection, ident: str) -> PlacementArea:
+    """One placement area by identifier."""
     found = rows(connection, f"SELECT {COLUMNS} FROM placement_area WHERE ident = ?", (ident,))
     if not found:
         raise MissingError("placement area", ident)
@@ -68,6 +69,7 @@ def of_ground(connection: sqlite3.Connection, ground: Ground) -> tuple[Placement
 
 
 def remove(connection: sqlite3.Connection, ident: str) -> None:
+    """Take a placement area out of the book."""
     get(connection, ident)
     with written(connection):
         connection.execute("DELETE FROM placement_area WHERE ident = ?", (ident,))

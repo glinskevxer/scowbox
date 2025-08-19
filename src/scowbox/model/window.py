@@ -1,4 +1,4 @@
-"""One environmental window."""
+"""One environmental window: a date range, a reach and a restriction."""
 
 from __future__ import annotations
 

@@ -38,6 +38,7 @@ def add(connection: sqlite3.Connection, scow: Scow) -> None:
 
 
 def get(connection: sqlite3.Connection, ident: str) -> Scow:
+    """One scow by identifier."""
     found = rows(connection, f"SELECT {COLUMNS} FROM scow WHERE ident = ?", (ident,))
     if not found:
         raise MissingError("scow", ident)
@@ -52,6 +53,7 @@ def listed(connection: sqlite3.Connection) -> tuple[Scow, ...]:
 
 
 def remove(connection: sqlite3.Connection, ident: str) -> None:
+    """Take a scow out of the fleet."""
     get(connection, ident)
     with written(connection):
         connection.execute("DELETE FROM scow WHERE ident = ?", (ident,))

@@ -51,6 +51,7 @@ def _read_downtime(row: sqlite3.Row) -> Downtime:
 
 
 def add_dredge(connection: sqlite3.Connection, dredge: Dredge) -> None:
+    """Write a dredge that is not in the book yet."""
     with written(connection), inserting("dredge", dredge.ident):
         connection.execute(
             f"INSERT INTO dredge ({DREDGE_COLUMNS}) VALUES (?,?,?,?)",
@@ -59,6 +60,7 @@ def add_dredge(connection: sqlite3.Connection, dredge: Dredge) -> None:
 
 
 def dredge(connection: sqlite3.Connection, ident: str) -> Dredge:
+    """One dredge by identifier."""
     found = rows(connection, f"SELECT {DREDGE_COLUMNS} FROM dredge WHERE ident = ?", (ident,))
     if not found:
         raise MissingError("dredge", ident)
@@ -66,6 +68,7 @@ def dredge(connection: sqlite3.Connection, ident: str) -> Dredge:
 
 
 def dredges(connection: sqlite3.Connection) -> tuple[Dredge, ...]:
+    """Every dredge on the job, by identifier."""
     found = rows(connection, f"SELECT {DREDGE_COLUMNS} FROM dredge ORDER BY ident")
     return tuple(_read_dredge(row) for row in found)
 
@@ -159,6 +162,7 @@ def listed(connection: sqlite3.Connection) -> tuple[Shift, ...]:
 
 
 def for_reach(connection: sqlite3.Connection, reach: str) -> tuple[Shift, ...]:
+    """Every shift worked on one reach, oldest first."""
     found = rows(
         connection,
         f"SELECT {SHIFT_COLUMNS} FROM shift WHERE reach = ? ORDER BY began",

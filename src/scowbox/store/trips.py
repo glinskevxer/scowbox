@@ -143,6 +143,7 @@ def release(connection: sqlite3.Connection, ticket: PlacementTicket) -> None:
 
 
 def ticket_of(connection: sqlite3.Connection, trip: str) -> PlacementTicket:
+    """The ticket that closed a trip out."""
     found = rows(connection, f"SELECT {TICKET_COLUMNS} FROM ticket WHERE trip = ?", (trip,))
     if not found:
         raise MissingError("ticket for trip", trip)
