@@ -7,8 +7,15 @@ from pathlib import Path
 
 import pytest
 
-from scowbox.errors import StateError
-from scowbox.store.sqlite import one, opened, rows, written
+from scowbox.errors import FieldError, StateError
+from scowbox.store.sqlite import (
+    one,
+    opened,
+    rows,
+    sql_identifier,
+    sql_integer,
+    written,
+)
 
 
 def test_a_connection_is_closed_on_the_way_out(tmp_path: Path) -> None:
@@ -71,3 +78,25 @@ def test_a_written_block_rolls_back_on_an_error(tmp_path: Path) -> None:
         with pytest.raises(RuntimeError):
             insert_then_fail(connection)
         assert rows(connection, "SELECT a FROM t") == []
+
+
+def test_a_plain_identifier_passes_through() -> None:
+    assert sql_identifier("reach") == "reach"
+    assert sql_identifier("line_item") == "line_item"
+
+
+@pytest.mark.parametrize("name", ["", "reach; drop table x", "1reach", "reach reach", "*"])
+def test_anything_but_a_plain_identifier_is_refused(name: str) -> None:
+    with pytest.raises(FieldError):
+        sql_identifier(name)
+
+
+def test_a_whole_number_passes_through() -> None:
+    assert sql_integer(9) == "9"
+    assert sql_integer(0) == "0"
+
+
+@pytest.mark.parametrize("value", ["9", 9.5, None, True])
+def test_anything_but_a_whole_number_is_refused(value: object) -> None:
+    with pytest.raises(FieldError):
+        sql_integer(value)

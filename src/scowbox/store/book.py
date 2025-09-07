@@ -15,7 +15,7 @@ from pathlib import Path
 
 from scowbox.errors import MissingError
 from scowbox.store.migrations import migrate
-from scowbox.store.sqlite import opened
+from scowbox.store.sqlite import opened, sql_identifier
 
 
 @contextmanager
@@ -38,7 +38,7 @@ def counts(connection: sqlite3.Connection) -> dict[str, int]:
         cursor.close()
     found = {}
     for name in names:
-        inner = connection.execute(f"SELECT count(*) AS n FROM {name}")
+        inner = connection.execute(f"SELECT count(*) AS n FROM {sql_identifier(name)}")
         try:
             found[name] = int(inner.fetchone()["n"])
         finally:

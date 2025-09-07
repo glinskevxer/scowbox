@@ -10,18 +10,42 @@ So the only way this package gets a connection is ``opened()``, which closes.
 
 from __future__ import annotations
 
+import re
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from scowbox.errors import StateError
+from scowbox.errors import FieldError, StateError
 
 PRAGMAS = (
     "PRAGMA foreign_keys = ON",
     "PRAGMA journal_mode = TRUNCATE",
     "PRAGMA synchronous = FULL",
 )
+
+
+PLAIN_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def sql_identifier(name: str) -> str:
+    """A table or column name to splice into a statement.
+
+    Sqlite will not take an identifier as a parameter, so a statement naming a
+    table worked out at runtime has to be built by hand. This is the only place
+    that is allowed to happen, and it happens behind a pattern that admits
+    nothing but a plain name.
+    """
+    if not PLAIN_NAME.match(name):
+        raise FieldError("identifier", f"{name!r} is not a plain sqlite identifier")
+    return name
+
+
+def sql_integer(value: object) -> str:
+    """A whole number to splice into a pragma, which takes no parameters either."""
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise FieldError("integer", f"{value!r} is not a whole number")
+    return str(value)
 
 
 def configure(connection: sqlite3.Connection) -> sqlite3.Connection:

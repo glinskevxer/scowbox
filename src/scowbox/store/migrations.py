@@ -12,7 +12,7 @@ import sqlite3
 from dataclasses import dataclass
 
 from scowbox.errors import StateError
-from scowbox.store.sqlite import written
+from scowbox.store.sqlite import sql_integer, written
 
 
 @dataclass(frozen=True)
@@ -301,6 +301,6 @@ def migrate(connection: sqlite3.Connection) -> tuple[str, ...]:
         with written(connection):
             for statement in migration.statements:
                 connection.execute(statement)
-            connection.execute(f"PRAGMA user_version = {migration.version}")
+            connection.execute(f"PRAGMA user_version = {sql_integer(migration.version)}")
         ran.append(migration.name)
     return tuple(ran)
