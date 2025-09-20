@@ -36,9 +36,26 @@ def _print(found: Estimate) -> None:
 
 
 @estimate.command("draft")
-@click.option("--through", type=click.DateTime(["%Y-%m-%d"]), required=True)
-@click.option("--material", type=click.Choice(materials()), default="silt", show_default=True)
-@click.option("--deduction", type=float, default=0.0, show_default=True)
+@click.option(
+    "--through",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="Last day the estimate covers.",
+)
+@click.option(
+    "--material",
+    type=click.Choice(materials()),
+    default="silt",
+    show_default=True,
+    help="Material class, which sets the bulking factor.",
+)
+@click.option(
+    "--deduction",
+    type=float,
+    default=0.0,
+    show_default=True,
+    help="Share of a scow quantity that falls outside the prism.",
+)
 @click.option("--claim", multiple=True, help="A lump sum item and share, as LI-0009=1.0")
 @click.pass_context
 def draft_estimate(
@@ -66,9 +83,26 @@ def draft_estimate(
 
 
 @estimate.command("write")
-@click.option("--through", type=click.DateTime(["%Y-%m-%d"]), required=True)
-@click.option("--material", type=click.Choice(materials()), default="silt", show_default=True)
-@click.option("--deduction", type=float, default=0.0, show_default=True)
+@click.option(
+    "--through",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="Last day the estimate covers.",
+)
+@click.option(
+    "--material",
+    type=click.Choice(materials()),
+    default="silt",
+    show_default=True,
+    help="Material class, which sets the bulking factor.",
+)
+@click.option(
+    "--deduction",
+    type=float,
+    default=0.0,
+    show_default=True,
+    help="Share of a scow quantity that falls outside the prism.",
+)
 @click.option("--claim", multiple=True, help="A lump sum item and share, as LI-0009=1.0")
 @click.pass_context
 def write_estimate(

@@ -33,7 +33,13 @@ def quantity() -> None:
 @click.argument("ident")
 @MATERIAL
 @DEDUCTION
-@click.option("--tolerance", type=float, default=0.10, show_default=True)
+@click.option(
+    "--tolerance",
+    type=float,
+    default=0.10,
+    show_default=True,
+    help="Share the two measurements may differ by before a reach is flagged.",
+)
 @click.pass_context
 def reach_quantity(
     ctx: click.Context, ident: str, material: str, deduction: float, tolerance: float

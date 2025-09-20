@@ -42,7 +42,13 @@ def add_dredge(ctx: click.Context, ident: str, name: str, plant: str, operator: 
 @click.argument("ident")
 @click.option("--dredge", required=True, help="The dredge that worked it.")
 @click.option("--reach", required=True, help="The reach it worked.")
-@click.option("--on", "day", type=click.DateTime(["%Y-%m-%d"]), required=True)
+@click.option(
+    "--on",
+    "day",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="The day the shift was worked.",
+)
 @click.option("--from", "began", required=True, help="Start of the shift, such as 06:00.")
 @click.option("--to", "ended", required=True, help="End of the shift, such as 18:00.")
 @click.pass_context
@@ -114,8 +120,20 @@ def list_shifts(ctx: click.Context, reach: str | None) -> None:
 
 
 @shift.command("time")
-@click.option("--from", "first", type=click.DateTime(["%Y-%m-%d"]), required=True)
-@click.option("--to", "last", type=click.DateTime(["%Y-%m-%d"]), required=True)
+@click.option(
+    "--from",
+    "first",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="First day of the period.",
+)
+@click.option(
+    "--to",
+    "last",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="Last day of the period.",
+)
 @click.option("--share", type=float, default=0.5, show_default=True, help="Day credit share.")
 @click.pass_context
 def shift_time(ctx: click.Context, first: dt.datetime, last: dt.datetime, share: float) -> None:

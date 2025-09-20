@@ -19,10 +19,21 @@ def contract() -> None:
 
 @contract.command("add")
 @click.argument("number")
-@click.option("--awarded", type=click.DateTime(["%Y-%m-%d"]), required=True)
-@click.option("--ntp", type=click.DateTime(["%Y-%m-%d"]), required=True)
+@click.option("--awarded", type=click.DateTime(["%Y-%m-%d"]), required=True, help="Day of award.")
+@click.option(
+    "--ntp",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="Day of the notice to proceed.",
+)
 @click.option("--days", type=int, required=True, help="Contract time in calendar days.")
-@click.option("--retainage", type=float, default=0.05, show_default=True)
+@click.option(
+    "--retainage",
+    type=float,
+    default=0.05,
+    show_default=True,
+    help="Share of the earned amount withheld.",
+)
 @click.option("--liquidated", default="$0.00", show_default=True, help="Damages per day.")
 @click.pass_context
 def add_contract(

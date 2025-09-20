@@ -20,7 +20,13 @@ def report() -> None:
 
 
 @report.command("day")
-@click.option("--on", "when", type=click.DateTime(["%Y-%m-%d"]), required=True)
+@click.option(
+    "--on",
+    "when",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="The day to report on.",
+)
 @click.pass_context
 def day(ctx: click.Context, when: dt.datetime) -> None:
     """Everything the book holds about one day."""
@@ -32,8 +38,20 @@ def day(ctx: click.Context, when: dt.datetime) -> None:
 
 @report.command("reach")
 @click.argument("ident")
-@click.option("--material", type=click.Choice(materials()), default="silt", show_default=True)
-@click.option("--deduction", type=float, default=0.0, show_default=True)
+@click.option(
+    "--material",
+    type=click.Choice(materials()),
+    default="silt",
+    show_default=True,
+    help="Material class, which sets the bulking factor.",
+)
+@click.option(
+    "--deduction",
+    type=float,
+    default=0.0,
+    show_default=True,
+    help="Share of a scow quantity that falls outside the prism.",
+)
 @click.pass_context
 def reach(ctx: click.Context, ident: str, material: str, deduction: float) -> None:
     """One reach, its records and its quantity."""
@@ -44,8 +62,20 @@ def reach(ctx: click.Context, ident: str, material: str, deduction: float) -> No
 
 
 @report.command("season")
-@click.option("--material", type=click.Choice(materials()), default="silt", show_default=True)
-@click.option("--deduction", type=float, default=0.0, show_default=True)
+@click.option(
+    "--material",
+    type=click.Choice(materials()),
+    default="silt",
+    show_default=True,
+    help="Material class, which sets the bulking factor.",
+)
+@click.option(
+    "--deduction",
+    type=float,
+    default=0.0,
+    show_default=True,
+    help="Share of a scow quantity that falls outside the prism.",
+)
 @click.pass_context
 def season(ctx: click.Context, material: str, deduction: float) -> None:
     """Where the job stands today."""

@@ -26,7 +26,13 @@ def survey() -> None:
     required=True,
     help="What the survey is for.",
 )
-@click.option("--on", "taken_on", type=click.DateTime(["%Y-%m-%d"]), required=True)
+@click.option(
+    "--on",
+    "taken_on",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="The day the survey was run.",
+)
 @click.option("--vessel", required=True, help="The boat that ran it.")
 @click.option("--draft", type=float, required=True, help="Transducer draft in feet.")
 @click.option("--gauge", default="", help="Gauge the shots reduce against.")

@@ -18,8 +18,20 @@ def window() -> None:
 
 @window.command("add")
 @click.argument("name")
-@click.option("--from", "begins", type=click.DateTime(["%Y-%m-%d"]), required=True)
-@click.option("--to", "ends", type=click.DateTime(["%Y-%m-%d"]), required=True)
+@click.option(
+    "--from",
+    "begins",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="First day of the window.",
+)
+@click.option(
+    "--to",
+    "ends",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="Last day of the window.",
+)
 @click.option(
     "--restriction",
     type=click.Choice([r.value for r in Restriction]),

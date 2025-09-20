@@ -66,7 +66,13 @@ def trip() -> None:
 @click.argument("ident")
 @click.option("--scow", "scow_ident", required=True, help="The scow that carried it.")
 @click.option("--reach", required=True, help="The reach it came out of.")
-@click.option("--on", "loaded_on", type=click.DateTime(["%Y-%m-%d"]), required=True)
+@click.option(
+    "--on",
+    "loaded_on",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="The day the scow was filled.",
+)
 @click.option("--to", "placement", required=True, help="Where it is bound.")
 @click.pass_context
 def add_trip(
@@ -117,7 +123,13 @@ def measure_trip(
 @trip.command("release")
 @click.argument("ident")
 @click.option("--at", "area", required=True, help="Where it was released.")
-@click.option("--on", "day", type=click.DateTime(["%Y-%m-%d"]), required=True)
+@click.option(
+    "--on",
+    "day",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="The day it was released.",
+)
 @click.option("--time", "clock", required=True, help="Time of release, such as 11:20.")
 @click.option(
     "--grade",
