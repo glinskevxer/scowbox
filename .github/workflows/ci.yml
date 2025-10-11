@@ -1,0 +1,193 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]" -c constraints.txt
+      - run: python -m ruff check .
+      - run: python -m ruff format --check .
+      - run: python -m mypy
+      - run: python -m scowbox.tools.check_docstrings
+      - run: python -m scowbox.tools.check_layers
+      - run: python -m scowbox.tools.check_clock
+      - run: python -m scowbox.tools.check_printing
+      - run: python -m scowbox.tools.check_sql
+      - run: python -m scowbox.tools.check_migrations
+      - run: python -m scowbox.tools.check_tests
+      - run: python -m scowbox.tools.check_help
+      - run: python -m scowbox.tools.schema_dump --check
+      - run: python -m scowbox.tools.build_docs --check
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]" -c constraints.txt
+      - run: python -m pytest -q
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]" -c constraints.txt
+      - run: python -m pytest -q --cov --cov-report=json --cov-report=term-missing
+      - run: python -m scowbox.tools.coverage_gate --floor 95 --file-floor 85 --worst 8
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage.json
+
+  installed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install .
+      - run: scowbox --version
+      - run: python -m scowbox.tools.smoke
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip build
+      - run: python -m build
+      - run: python -m pip install dist/*.whl
+      - run: python -c "import scowbox; print(scowbox.__version__)"
+      - run: python -m scowbox.tools.smoke --quiet
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+  walk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install .
+      - name: dredge a reach through the console script
+        run: |
+          set -euo pipefail
+          book=/tmp/walk.sqlite3
+          rm -f "$book"
+          printf 'Date Time,Water Level,Quality\n2025-03-03 06:54,2.000,v\n2025-03-03 07:06,2.000,v\n2025-04-07 06:54,2.000,v\n2025-04-07 07:06,2.000,v\n' > /tmp/gauge.csv
+          printf 'station,offset,depth,time\n' > /tmp/before.csv
+          for s in 100+00 101+00 102+00 103+00; do
+            for o in -300 0 300; do printf '%s,%s,38.0,07:00\n' "$s" "$o" >> /tmp/before.csv; done
+          done
+          sed 's/38.0/42.0/' /tmp/before.csv > /tmp/after.csv
+          scowbox --book "$book" init
+          scowbox --book "$book" about
+          scowbox --book "$book" template depths --bottom 600 --depth 42 --advance 2 --overdepth 2
+          scowbox --book "$book" template area --bottom 600 --depth 42 --advance 2 --overdepth 2
+          scowbox --book "$book" contract add W912PM-25-C-0014 --awarded 2025-01-20 \
+            --ntp 2025-02-03 --days 365 --retainage 0.05 --liquidated '$3,400.00'
+          scowbox --book "$book" contract item LI-0001 "Maintenance dredging, base" \
+            --unit cy --price '$7.35' --group base --estimated 480000
+          scowbox --book "$book" contract item LI-0009 "Mobilisation" \
+            --unit ls --price '$1,250,000.00'
+          scowbox --book "$book" contract show
+          scowbox --book "$book" reach add RCH-012 "Lower Range" --begin 100+00 --end 103+00 \
+            --bottom 600 --depth 42 --slope 0 --advance 2 --overdepth 2 --method both
+          scowbox --book "$book" reach list
+          scowbox --book "$book" reach show RCH-012
+          scowbox --book "$book" tide load 8658120 /tmp/gauge.csv
+          scowbox --book "$book" tide list
+          scowbox --book "$book" tide at 8658120 2025-03-03T07:00:00-05:00
+          scowbox --book "$book" survey add SV-0031 RCH-012 --kind before --on 2025-03-03 \
+            --vessel "Cape Fear" --draft 2.0 --gauge 8658120
+          scowbox --book "$book" survey add SV-0032 RCH-012 --kind after --on 2025-04-07 \
+            --vessel "Cape Fear" --draft 2.0 --gauge 8658120
+          scowbox --book "$book" survey load SV-0031 /tmp/before.csv
+          scowbox --book "$book" survey load SV-0032 /tmp/after.csv --show-refused
+          scowbox --book "$book" survey list --reach RCH-012
+          scowbox --book "$book" survey show SV-0031
+          scowbox --book "$book" scow add SC-004 "Dixie 41" --length 180 --width 42 --depth 14
+          scowbox --book "$book" scow list
+          scowbox --book "$book" placement add PA-002 "Wilmington ODMDS" \
+            --ground "ocean site" --permit SAW-2019-01142
+          scowbox --book "$book" placement list
+          scowbox --book "$book" placement show PA-002
+          for n in $(seq -w 1 14); do
+            scowbox --book "$book" trip add "TR-000$n" --scow SC-004 --reach RCH-012 \
+              --on 2025-03-10 --to PA-002
+            scowbox --book "$book" trip measure "TR-000$n" --light 12 --pb 4 --sb 4 --ps 4 --ss 4
+            scowbox --book "$book" trip release "TR-000$n" --at PA-002 --on 2025-03-10 \
+              --time 11:20 --grade suitable
+          done
+          scowbox --book "$book" trip list --reach RCH-012
+          scowbox --book "$book" trip show TR-00001
+          scowbox --book "$book" trip open
+          scowbox --book "$book" shift dredge DR-003 Cherokee --plant mechanical \
+            --operator "Norfolk Dredging"
+          scowbox --book "$book" shift log SH-00021 --dredge DR-003 --reach RCH-012 \
+            --on 2025-03-10 --from 06:00 --to 18:00
+          scowbox --book "$book" shift stop SH-00021 --from 06:00 --to 13:00 --reason weather
+          scowbox --book "$book" shift list
+          scowbox --book "$book" shift time --from 2025-03-01 --to 2025-03-31
+          scowbox --book "$book" window add loggerhead --from 2025-05-01 --to 2025-11-30 \
+            --restriction closed --authority NMFS
+          scowbox --book "$book" window list
+          scowbox --book "$book" window on 2025-07-01 RCH-012
+          scowbox --book "$book" quantity reach RCH-012
+          scowbox --book "$book" quantity groups
+          scowbox --book "$book" quantity gaps
+          scowbox --book "$book" report day --on 2025-03-10
+          scowbox --book "$book" report reach RCH-012
+          scowbox --book "$book" report season
+          scowbox --book "$book" report audit --closed-through 2025-03-31
+          scowbox --book "$book" estimate draft --through 2025-04-30 --claim LI-0009=1.0
+          scowbox --book "$book" estimate write --through 2025-04-30 --claim LI-0009=1.0
+          scowbox --book "$book" estimate list
+          scowbox --book "$book" estimate show EST-001
+          scowbox --book "$book" counts
