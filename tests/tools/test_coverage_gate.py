@@ -60,12 +60,28 @@ def test_a_high_package_figure_does_not_hide_a_bad_file() -> None:
     assert len(findings(99.0, files, 95.0, 85.0)) == 1
 
 
-def test_the_real_report_clears_the_floors_when_it_is_there(
-    capsys: pytest.CaptureFixture[str],
+def test_the_gate_prints_the_worst_files(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    try:
-        status = main(["--floor", "0", "--file-floor", "0", "--worst", "3"])
-    except FileNotFoundError:
-        pytest.skip("no coverage report in this run")
-    assert status == 0
-    assert "coverage_gate" in capsys.readouterr().out
+    where = a_report(tmp_path, 96.0, {"a.py": 99.0, "b.py": 90.0, "c.py": 95.0})
+    monkeypatch.setattr("scowbox.tools.coverage_gate.read", lambda: read(where))
+    assert main(["--floor", "95", "--file-floor", "85", "--worst", "2"]) == 0
+    out = capsys.readouterr().out
+    assert "96.00% over 3 files" in out
+    assert "b.py" in out
+    assert "a.py" not in out
+
+
+def test_the_gate_fails_on_a_floor(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    where = a_report(tmp_path, 90.0, {"a.py": 99.0})
+    monkeypatch.setattr("scowbox.tools.coverage_gate.read", lambda: read(where))
+    assert main(["--floor", "95"]) == 1
+    assert "under the 95% floor" in capsys.readouterr().out
+
+
+def test_the_gate_takes_its_own_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    where = a_report(tmp_path, 96.0, {"a.py": 99.0})
+    monkeypatch.setattr("scowbox.tools.coverage_gate.read", lambda: read(where))
+    assert main([]) == 0

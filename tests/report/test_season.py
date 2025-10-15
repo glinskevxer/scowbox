@@ -151,6 +151,53 @@ def test_an_unmeasured_reach_is_named(open_book: sqlite3.Connection) -> None:
     assert "RCH-014" in out
 
 
+def test_a_group_with_no_line_item_says_so(open_book: sqlite3.Connection) -> None:
+    contracts.add(open_book, CONTRACT)
+    reaches.add(
+        open_book,
+        Reach(
+            ident="RCH-014",
+            name="Entrance",
+            line=Reachline.parse("200+00", "240+00"),
+            template=Template(bottom_width=400, authorized_depth=Depth.of_feet(42), side_slope=3),
+            method=Method.SCOW,
+            group="entrance",
+        ),
+    )
+    trips.add(
+        open_book,
+        ScowTrip(
+            "TR-04190",
+            "SC-004",
+            "RCH-014",
+            DAY,
+            "PA-002",
+            tuple(BoxReading(c, 12.0, 4.0) for c in Corner),
+        ),
+    )
+    a_trip(open_book)
+    out = text(open_book)
+    assert "no item" in out
+
+
+def test_two_contracts_leave_the_pricing_out(open_book: sqlite3.Connection) -> None:
+    contracts.add(open_book, CONTRACT)
+    contracts.add(
+        open_book,
+        Contract(
+            number="W912PM-25-C-0020",
+            awarded=dt.date(2025, 1, 20),
+            notice_to_proceed=dt.date(2025, 2, 3),
+            days=365,
+            retainage=0.05,
+            liquidated=Money.parse("$3,400.00"),
+        ),
+    )
+    a_trip(open_book)
+    out = text(open_book)
+    assert "No contract in this book." in out
+
+
 def test_a_clean_book_audits_clean(open_book: sqlite3.Connection) -> None:
     assert "Nothing outstanding." in "\n".join(audit(open_book))
 

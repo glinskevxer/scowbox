@@ -11,11 +11,12 @@ from __future__ import annotations
 import sqlite3
 
 from scowbox.boxmeasure.bulking import Bulking
+from scowbox.errors import MissingError
 from scowbox.job.quantities import by_group, measured_through, unmeasured
 from scowbox.pay.timeloss import extension, tally
 from scowbox.report.lines import blank, heading, indent, pair, table
 from scowbox.store import contracts, estimates, reaches, shifts, surveys, trips
-from scowbox.units.money import Money
+from scowbox.units.money import Money, half_up
 from scowbox.units.volume import total
 
 GROUP_WIDTHS = (16, 16, 16, 14)
@@ -55,7 +56,7 @@ def _quantities(connection: sqlite3.Connection, bulking: Bulking, deduction: flo
         return ["Nothing measured yet."]
     try:
         contract = contracts.only(connection)
-    except Exception:  # noqa: BLE001
+    except MissingError:
         contract = None
     body = []
     for group, yards in sorted(gathered.items()):
@@ -64,10 +65,11 @@ def _quantities(connection: sqlite3.Connection, bulking: Bulking, deduction: flo
         if contract is not None:
             try:
                 item = contract.for_group(group)
-                bid = f"{item.estimated:,.0f}"
-                priced = str(Money(round(item.unit_price.cents * yards.yards)))
-            except Exception:  # noqa: BLE001
+            except MissingError:
                 bid = "no item"
+            else:
+                bid = f"{item.estimated:,.0f}"
+                priced = str(Money(half_up(item.unit_price.cents * yards.yards)))
         body.append((group, yards.rounded(), bid, priced))
     lines = table(("pay group", "measured", "bid", "earned"), body, GROUP_WIDTHS)
     lines.append(blank())
@@ -98,7 +100,7 @@ def _time(connection: sqlite3.Connection) -> list[str]:
 def _estimates(connection: sqlite3.Connection) -> list[str]:
     try:
         contract = contracts.only(connection)
-    except Exception:  # noqa: BLE001
+    except MissingError:
         return ["No contract in this book."]
     written = estimates.listed(connection, contract.number)
     if not written:
