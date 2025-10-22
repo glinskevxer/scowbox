@@ -7,6 +7,7 @@ import sys
 import click
 
 from scowbox import __version__
+from scowbox.cli.book import book as book_group
 from scowbox.cli.contract import contract
 from scowbox.cli.estimate import estimate
 from scowbox.cli.placement import placement
@@ -78,6 +79,7 @@ cli.add_command(quantity)
 cli.add_command(contract)
 cli.add_command(estimate)
 cli.add_command(report)
+cli.add_command(book_group)
 cli.add_command(window)
 
 
