@@ -9,6 +9,7 @@ import click
 from scowbox.boxmeasure.bulking import materials, typical
 from scowbox.report import audit as audit_report
 from scowbox.report import day as day_report
+from scowbox.report import export as export_sheets
 from scowbox.report import reach as reach_report
 from scowbox.report import season as season_report
 from scowbox.store.book import book
@@ -99,3 +100,14 @@ def audit(ctx: click.Context, closed_through: dt.datetime | None) -> None:
         lines = audit_report.render(connection, closed_through.date() if closed_through else None)
     for line in lines:
         click.echo(line)
+
+
+@report.command("export")
+@click.argument("where", type=click.Path(file_okay=False))
+@click.pass_context
+def export(ctx: click.Context, where: str) -> None:
+    """Write the book out as comma separated files."""
+    with book(ctx.obj["book"]) as connection:
+        written = export_sheets.write(connection, where)
+    for path in written:
+        click.echo(str(path))

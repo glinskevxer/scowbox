@@ -204,6 +204,12 @@ Everything the book holds about one day.
 
 - `--on` — The day to report on.
 
+## `scowbox report export`
+
+Write the book out as comma separated files.
+
+Arguments: `where`
+
 ## `scowbox report reach`
 
 One reach, its records and its quantity.
