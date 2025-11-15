@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
+
 import pytest
 
 from scowbox.boxmeasure.box import BoxMeasure
@@ -11,6 +13,7 @@ from scowbox.measure.fromscow import ScowQuantity
 from scowbox.measure.fromsurvey import SurveyQuantity
 from scowbox.measure.governing import Governs, determine, spread_between
 from scowbox.model.channel import Method, Reach, Template
+from scowbox.model.reconciliation import Accepted, Reconciliation
 from scowbox.section.volume import ReachVolume, Slice
 from scowbox.units.depth import Depth
 from scowbox.units.station import Reachline, Station
@@ -170,3 +173,80 @@ def test_a_single_sided_reach_has_no_difference() -> None:
     got = determine(a_reach(Method.SURVEY), survey(10000))
     assert got.difference is None
     assert got.spread is None
+
+
+def a_settlement(accepted: Accepted, **over: object) -> Reconciliation:
+    fields: dict[str, object] = {
+        "reach": "RCH-012",
+        "decided_on": dt.date(2025, 11, 4),
+        "accepted": accepted,
+        "decided_by": "R. Beaufort",
+        "note": "",
+        "quantity": None,
+    }
+    fields.update(over)
+    return Reconciliation(**fields)  # type: ignore[arg-type]
+
+
+def test_a_reconciliation_settles_the_quantity() -> None:
+    got = determine(
+        a_reach(Method.BOTH),
+        survey(10000),
+        scow(8000),
+        settled=a_settlement(Accepted.SURVEY),
+    )
+    assert got.quantity == Yards.of_yards(10000)
+    assert got.governs is Governs.SETTLED
+    assert not got.reconcile
+
+
+def test_a_reconciliation_can_settle_on_the_scows() -> None:
+    got = determine(
+        a_reach(Method.BOTH), survey(10000), scow(8000), settled=a_settlement(Accepted.SCOW)
+    )
+    assert got.quantity == Yards.of_yards(8000)
+
+
+def test_an_agreed_figure_is_neither_measurement() -> None:
+    got = determine(
+        a_reach(Method.BOTH),
+        survey(10000),
+        scow(8000),
+        settled=a_settlement(
+            Accepted.AGREED, quantity=Yards.of_yards(9000), note="split the difference"
+        ),
+    )
+    assert got.quantity == Yards.of_yards(9000)
+    assert "split the difference" in got.notes
+
+
+def test_the_reading_behind_a_settlement_is_still_reported() -> None:
+    got = determine(
+        a_reach(Method.BOTH), survey(10000), scow(8000), settled=a_settlement(Accepted.SURVEY)
+    )
+    assert got.survey == Yards.of_yards(10000)
+    assert got.scow == Yards.of_yards(8000)
+    assert got.spread == 0.2
+
+
+def test_a_settlement_for_another_reach_is_refused() -> None:
+    with pytest.raises(RuleError, match="is for RCH-014"):
+        determine(
+            a_reach(Method.BOTH),
+            survey(10000),
+            scow(8000),
+            settled=a_settlement(Accepted.SURVEY, reach="RCH-014"),
+        )
+
+
+def test_a_settlement_onto_something_never_measured_is_refused() -> None:
+    with pytest.raises(RuleError, match="never measured"):
+        determine(a_reach(Method.SURVEY), survey(10000), settled=a_settlement(Accepted.SCOW))
+
+
+def test_a_settlement_beats_the_tolerance_either_way() -> None:
+    close = determine(
+        a_reach(Method.BOTH), survey(10000), scow(9800), settled=a_settlement(Accepted.SCOW)
+    )
+    assert close.quantity == Yards.of_yards(9800)
+    assert close.governs is Governs.SETTLED

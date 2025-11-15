@@ -27,6 +27,7 @@ from scowbox.errors import RuleError
 from scowbox.measure.fromscow import ScowQuantity
 from scowbox.measure.fromsurvey import SurveyQuantity
 from scowbox.model.channel import Method, Reach
+from scowbox.model.reconciliation import Accepted, Reconciliation
 from scowbox.units.volume import Yards
 
 TOLERANCE = 0.10
@@ -39,6 +40,7 @@ class Governs(Enum):
     SURVEY = "survey"
     SCOW = "scow"
     LESSER = "lesser of the two"
+    SETTLED = "reconciliation"
 
 
 @dataclass(frozen=True)
@@ -77,11 +79,19 @@ def determine(
     scow: ScowQuantity | None = None,
     *,
     tolerance: float = TOLERANCE,
+    settled: Reconciliation | None = None,
 ) -> Determination:
-    """Decide the pay quantity for one reach from what was measured."""
+    """Decide the pay quantity for one reach from what was measured.
+
+    A reconciliation, where there is one, wins. It is the only thing that does:
+    the parties looked at both measurements and signed for an answer, and a
+    program that re-derives the quantity underneath them has thrown that away.
+    """
     from_survey = None if survey is None else survey.volume.pay
     from_scow = None if scow is None else scow.pay
     notes: list[str] = []
+    if settled is not None:
+        return _settled(reach, from_survey, from_scow, settled)
     if reach.method is Method.SURVEY:
         if from_survey is None:
             raise RuleError(f"{reach.ident} is measured by survey and has no survey quantity")
@@ -123,6 +133,41 @@ def determine(
         governs=Governs.LESSER,
         spread=apart,
         reconcile=True,
+        notes=tuple(notes),
+    )
+
+
+def _settled(
+    reach: Reach,
+    survey: Yards | None,
+    scow: Yards | None,
+    settled: Reconciliation,
+) -> Determination:
+    """The quantity the parties signed for, and the reading behind it."""
+    if settled.reach != reach.ident:
+        raise RuleError(f"the reconciliation is for {settled.reach}, not {reach.ident}")
+    taken = {
+        Accepted.SURVEY: survey,
+        Accepted.SCOW: scow,
+        Accepted.AGREED: settled.quantity,
+    }[settled.accepted]
+    if taken is None:
+        raise RuleError(
+            f"{reach.ident} was reconciled onto the {settled.accepted.value},"
+            f" which was never measured"
+        )
+    notes = [settled.describe()]
+    if settled.note.strip():
+        notes.append(settled.note.strip())
+    return Determination(
+        reach=reach.ident,
+        method=reach.method,
+        survey=survey,
+        scow=scow,
+        quantity=taken,
+        governs=Governs.SETTLED,
+        spread=None if survey is None or scow is None else spread_between(survey, scow),
+        reconcile=False,
         notes=tuple(notes),
     )
 
