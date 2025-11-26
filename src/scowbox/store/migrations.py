@@ -269,6 +269,22 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        10,
+        "reconciliations",
+        (
+            """
+            CREATE TABLE reconciliation (
+                reach TEXT PRIMARY KEY REFERENCES reach (ident) ON DELETE CASCADE,
+                decided_on TEXT NOT NULL,
+                accepted TEXT NOT NULL,
+                decided_by TEXT NOT NULL,
+                note TEXT NOT NULL DEFAULT '',
+                quantity INTEGER
+            )
+            """,
+        ),
+    ),
 )
 
 

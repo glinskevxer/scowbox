@@ -29,7 +29,7 @@ from scowbox.measure.governing import TOLERANCE, Determination, determine
 from scowbox.model.channel import Reach
 from scowbox.model.survey import Survey, SurveyKind
 from scowbox.section.gather import DEFAULT_CORRIDOR_FEET
-from scowbox.store import reaches, scows, surveys, tides, trips
+from scowbox.store import reaches, reconciliations, scows, surveys, tides, trips
 from scowbox.units.clock import moment
 from scowbox.units.volume import Yards
 
@@ -112,7 +112,13 @@ def determine_reach(
     interval: float = DEFAULT_INTERVAL_FEET,
     corridor: float = DEFAULT_CORRIDOR_FEET,
 ) -> Determination:
-    """The pay quantity for one reach, measured every way its method allows."""
+    """The pay quantity for one reach, measured every way its method allows.
+
+    A reconciliation in the book is picked up here rather than passed in. It is
+    a property of the reach, not of the caller, and a report that showed the
+    unsettled figure because it forgot to look would be worse than one that
+    could not show it at all.
+    """
     reach = reaches.get(connection, ident)
     from_survey = (
         survey_side(connection, reach, interval=interval, corridor=corridor)
@@ -124,7 +130,13 @@ def determine_reach(
         if reach.method.takes_scow
         else None
     )
-    return determine(reach, from_survey, from_scow, tolerance=tolerance)
+    return determine(
+        reach,
+        from_survey,
+        from_scow,
+        tolerance=tolerance,
+        settled=reconciliations.find(connection, ident),
+    )
 
 
 def by_group(

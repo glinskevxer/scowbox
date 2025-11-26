@@ -188,6 +188,37 @@ One reach in full.
 
 Arguments: `ident`
 
+## `scowbox reconcile`
+
+Disagreements between the two measurements, and how they were settled.
+
+## `scowbox reconcile drop`
+
+Take a reconciliation back out, which puts the reach back in dispute.
+
+Arguments: `reach`
+
+## `scowbox reconcile list`
+
+Every reconciliation in the book.
+
+## `scowbox reconcile open`
+
+Reaches whose two measurements disagree and are not settled.
+
+## `scowbox reconcile settle`
+
+Record what the parties agreed for one reach.
+
+Arguments: `reach`
+
+- `--accept` — Which answer the parties settled on.
+- `--on` — Day settled.
+- `--by` — Who decided it.
+- `--quantity` — Agreed figure in cubic yards.
+- `--note` — What it was agreed on.
+- `--replace` — Overwrite a settlement already there.
+
 ## `scowbox report`
 
 Reports off the book.
