@@ -206,6 +206,8 @@ Every reconciliation in the book.
 
 Reaches whose two measurements disagree and are not settled.
 
+- `--material` — Material class, which sets the bulking factor.
+
 ## `scowbox reconcile settle`
 
 Record what the parties agreed for one reach.

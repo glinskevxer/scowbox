@@ -6,10 +6,12 @@ import datetime as dt
 
 import click
 
-from scowbox.boxmeasure.bulking import typical
+from scowbox.boxmeasure.bulking import materials, typical
+from scowbox.errors import MissingError, RuleError
 from scowbox.job.quantities import determine_reach
+from scowbox.measure.governing import Determination
 from scowbox.model.reconciliation import Accepted, Reconciliation
-from scowbox.store import reconciliations
+from scowbox.store import reaches, reconciliations
 from scowbox.store.book import book
 from scowbox.units.volume import Yards
 
@@ -19,18 +21,31 @@ def reconcile() -> None:
     """Disagreements between the two measurements, and how they were settled."""
 
 
-@reconcile.command("open")
-@click.pass_context
-def open_reaches(ctx: click.Context) -> None:
-    """Reaches whose two measurements disagree and are not settled."""
-    with book(ctx.obj["book"]) as connection:
-        from scowbox.store import reaches as reach_store
+def _line(held: Determination) -> str:
+    """One outstanding reach, with both readings and the gap between them."""
+    survey = held.survey.rounded() if held.survey is not None else "not taken"
+    scow = held.scow.rounded() if held.scow is not None else "not taken"
+    spread = f"{held.spread:.1%}" if held.spread is not None else "-"
+    return f"{held.reach}  survey {survey:>14}  scow {scow:>14}  spread {spread:>7}"
 
-        found = []
-        for reach in reach_store.listed(connection):
+
+@reconcile.command("open")
+@click.option(
+    "--material",
+    type=click.Choice(materials()),
+    default="silt",
+    show_default=True,
+    help="Material class, which sets the bulking factor.",
+)
+@click.pass_context
+def open_reaches(ctx: click.Context, material: str) -> None:
+    """Reaches whose two measurements disagree and are not settled."""
+    found = []
+    with book(ctx.obj["book"]) as connection:
+        for reach in reaches.listed(connection):
             try:
-                held = determine_reach(connection, reach.ident, typical("silt"))
-            except Exception:  # noqa: BLE001
+                held = determine_reach(connection, reach.ident, typical(material))
+            except (MissingError, RuleError):
                 continue
             if held.reconcile:
                 found.append(held)
@@ -38,13 +53,7 @@ def open_reaches(ctx: click.Context) -> None:
         click.echo("nothing outstanding")
         return
     for held in found:
-        click.echo(
-            f"{held.reach}  survey {held.survey.rounded() if held.survey else '-'}"
-            f"  scow {held.scow.rounded() if held.scow else '-'}"
-            f"  spread {held.spread:.1%}"
-            if held.spread is not None
-            else held.reach
-        )
+        click.echo(_line(held))
 
 
 @reconcile.command("settle")
