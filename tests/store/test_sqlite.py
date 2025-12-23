@@ -51,7 +51,7 @@ def test_expecting_one_row_and_finding_none_says_so(tmp_path: Path) -> None:
             one(connection, "SELECT a FROM t")
 
 
-def test_rows_returns_everything(tmp_path: Path) -> None:
+def test_rows_returns_every_row_of_a_query(tmp_path: Path) -> None:
     with opened(tmp_path / "book.sqlite3") as connection:
         connection.execute("CREATE TABLE t (a INTEGER)")
         connection.executemany("INSERT INTO t VALUES (?)", [(1,), (2,), (3,)])

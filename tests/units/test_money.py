@@ -61,7 +61,7 @@ def test_portion_of_a_credit_rounds_away_from_zero() -> None:
     assert Money(-101).portion(0.5) == Money(-51)
 
 
-def test_extension_rounds_once() -> None:
+def test_an_extension_rounds_once_only() -> None:
     price = Money.parse("$7.35")
     assert extend(price, Yards.of_yards(1000)) == Money.parse("$7,350.00")
     assert extend(price, Yards.of_yards(1000.5)) == Money.parse("$7,353.68")

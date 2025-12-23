@@ -54,7 +54,7 @@ def test_one_measured_trip_is_one_box() -> None:
     assert got.scow_yards == ONE_LOAD
 
 
-def test_trips_add_up() -> None:
+def test_two_trips_add_up_to_two_boxes() -> None:
     got = scow_quantity(
         a_reach(), FLEET, [a_trip("TR-04188", level()), a_trip("TR-04190", level())], SILT
     )

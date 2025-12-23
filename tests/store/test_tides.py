@@ -28,7 +28,7 @@ def some_readings(*pairs: tuple[str, float]) -> list[TideReading]:
     return [TideReading(moment(DAY, clock), height) for clock, height in pairs]
 
 
-def test_readings_round_trip(open_book: sqlite3.Connection) -> None:
+def test_readings_round_trip_through_the_book(open_book: sqlite3.Connection) -> None:
     tides.add_readings(open_book, "8658120", some_readings(("07:00", 1.0), ("07:06", 1.6)))
     record = tides.record_for(open_book, "8658120", moment(DAY, "07:00"), moment(DAY, "07:06"))
     assert record.height_at(moment(DAY, "07:03")) == 1.3

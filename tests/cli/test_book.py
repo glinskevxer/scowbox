@@ -30,7 +30,7 @@ def test_verify_names_the_schema_version(run: Book) -> None:
     assert f"schema     version {latest()} of {latest()}" in run("book", "verify")
 
 
-def test_counts_add_up(run: Book) -> None:
+def test_the_counts_add_up_to_a_total(run: Book) -> None:
     out = run("book", "counts")
     assert "reach" in out
     assert "total" in out

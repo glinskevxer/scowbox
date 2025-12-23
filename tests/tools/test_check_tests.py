@@ -14,7 +14,7 @@ from scowbox.tools.check_tests import (
 from scowbox.tools.scan import modules
 
 
-def test_this_package_passes() -> None:
+def test_this_package_has_nothing_to_report() -> None:
     assert findings() == []
 
 

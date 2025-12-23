@@ -19,7 +19,7 @@ def test_the_workflow_is_in_the_checkout() -> None:
     assert workflow_path().exists()
 
 
-def test_this_workflow_passes() -> None:
+def test_this_workflow_has_nothing_to_report() -> None:
     assert findings() == []
 
 

@@ -53,7 +53,7 @@ def test_loading_reports_what_went_in(run: Book, tmp_path: Path) -> None:
     assert "2 shots loaded, 0 replaced" in out
 
 
-def test_loading_twice_replaces(run: Book, tmp_path: Path) -> None:
+def test_loading_twice_replaces_the_shots(run: Book, tmp_path: Path) -> None:
     export = an_export(tmp_path / "shots.csv", "100+00,-50,41.2,07:45", "100+00,50,43.8,07:45")
     run("survey", "load", "SV-0031", export)
     assert "2 shots loaded, 2 replaced" in run("survey", "load", "SV-0031", export)

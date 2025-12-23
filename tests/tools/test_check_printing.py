@@ -18,7 +18,7 @@ def a_module(tmp_path: Path, body: str, package: str = "report") -> list[str]:
     return findings([parse(module, tmp_path)])
 
 
-def test_this_package_passes() -> None:
+def test_this_package_has_nothing_to_report() -> None:
     assert findings() == []
 
 

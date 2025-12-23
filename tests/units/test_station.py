@@ -8,12 +8,12 @@ from scowbox.errors import FieldError
 from scowbox.units.station import Reachline, Station
 
 
-def test_parse_whole_station() -> None:
+def test_parse_reads_a_whole_station() -> None:
     assert Station.parse("12+50").hundredths == 125000
     assert Station.parse("0+00").hundredths == 0
 
 
-def test_parse_carries_hundredths() -> None:
+def test_parse_carries_the_hundredths() -> None:
     assert Station.parse("12+50.25").hundredths == 125025
     assert Station.parse("3+07.5").hundredths == 30750
 
@@ -28,7 +28,7 @@ def test_parse_refuses_anything_that_is_not_stationing(text: str) -> None:
         Station.parse(text)
 
 
-def test_text_round_trips() -> None:
+def test_stationing_text_round_trips_exactly() -> None:
     for text in ["0+00", "12+50", "12+50.25", "137+04.10", "-1+50"]:
         assert str(Station.parse(text)) == text
 

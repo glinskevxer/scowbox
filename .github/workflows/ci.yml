@@ -32,6 +32,7 @@ jobs:
       - run: python -m scowbox.tools.check_migrations
       - run: python -m scowbox.tools.check_tests
       - run: python -m scowbox.tools.check_help
+      - run: python -m scowbox.tools.check_naming
       - run: python -m scowbox.tools.check_workflow
       - run: python -m scowbox.tools.schema_dump --check
       - run: python -m scowbox.tools.build_docs --check

@@ -36,7 +36,7 @@ def test_a_command_carries_its_first_line_of_help() -> None:
     assert "Put a reach in the book." in text
 
 
-def test_arguments_are_listed() -> None:
+def test_arguments_are_listed_under_a_command() -> None:
     text = "\n".join(reference())
     assert "Arguments: `ident`, `name`" in text
 

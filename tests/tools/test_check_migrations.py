@@ -19,7 +19,7 @@ def test_the_lock_file_is_in_the_checkout() -> None:
     assert lock_path().exists()
 
 
-def test_this_package_passes() -> None:
+def test_this_package_has_nothing_to_report() -> None:
     assert findings() == []
 
 
