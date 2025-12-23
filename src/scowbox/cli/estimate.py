@@ -7,10 +7,10 @@ import datetime as dt
 import click
 
 from scowbox.boxmeasure.bulking import materials, typical
+from scowbox.cli.context import opened
 from scowbox.job.estimating import draft, write
 from scowbox.pay.estimate import Estimate
 from scowbox.store import contracts, estimates
-from scowbox.store.book import book
 
 
 @click.group()
@@ -67,7 +67,7 @@ def draft_estimate(
 ) -> None:
     """Work out the next estimate without writing it."""
     lumps = dict(_claim(one) for one in claim)
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         drafted = draft(
             connection,
             through.date(),
@@ -114,7 +114,7 @@ def write_estimate(
 ) -> None:
     """Work out the next estimate and put it in the book."""
     lumps = dict(_claim(one) for one in claim)
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         drafted = draft(
             connection,
             through.date(),
@@ -130,7 +130,7 @@ def write_estimate(
 @click.pass_context
 def list_estimates(ctx: click.Context) -> None:
     """Every estimate written on the contract."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         held = contracts.only(connection)
         found = estimates.listed(connection, held.number)
     if not found:
@@ -147,7 +147,7 @@ def list_estimates(ctx: click.Context) -> None:
 @click.pass_context
 def show_estimate(ctx: click.Context, ident: str) -> None:
     """One estimate in full."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = estimates.get(connection, ident)
     _print(found)
 

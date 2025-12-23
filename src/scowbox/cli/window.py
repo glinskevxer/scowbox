@@ -6,9 +6,9 @@ import datetime as dt
 
 import click
 
+from scowbox.cli.context import opened
 from scowbox.model.window import ALL_REACHES, Restriction, Window
 from scowbox.store import windows
-from scowbox.store.book import book
 
 
 @click.group()
@@ -59,7 +59,7 @@ def add_window(
         authority=authority,
         reach=reach,
     )
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         windows.add(connection, record)
     click.echo(record.describe())
 
@@ -68,7 +68,7 @@ def add_window(
 @click.pass_context
 def list_windows(ctx: click.Context) -> None:
     """Every window in the book, in date order."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = windows.listed(connection)
     if not found:
         click.echo("no windows")
@@ -83,7 +83,7 @@ def list_windows(ctx: click.Context) -> None:
 @click.pass_context
 def window_on(ctx: click.Context, day: dt.datetime, reach: str) -> None:
     """What governs one reach on one day."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = windows.covering(connection, day.date(), reach)
         schedule = windows.schedule(connection)
     governs = schedule.on(day.date(), reach)

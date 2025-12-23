@@ -6,9 +6,9 @@ import datetime as dt
 
 import click
 
+from scowbox.cli.context import opened
 from scowbox.feed.tides import parse_file
 from scowbox.store import tides
-from scowbox.store.book import book
 
 
 @click.group()
@@ -23,7 +23,7 @@ def tide() -> None:
 def load_tide(ctx: click.Context, gauge: str, download: str) -> None:
     """Load a water level download for one gauge."""
     parsed = parse_file(download, gauge)
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         written = tides.add_readings(connection, gauge, parsed.readings)
     click.echo(f"{gauge}: {parsed.count:,} read, {written:,} new")
     if parsed.preliminary:
@@ -38,7 +38,7 @@ def load_tide(ctx: click.Context, gauge: str, download: str) -> None:
 @click.pass_context
 def list_tides(ctx: click.Context) -> None:
     """Every gauge the book holds readings for, and what it covers."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = tides.gauges(connection)
         if not found:
             click.echo("no gauges")
@@ -55,6 +55,6 @@ def list_tides(ctx: click.Context) -> None:
 def tide_at(ctx: click.Context, gauge: str, when: str) -> None:
     """The interpolated height at one moment, as the reduction would use it."""
     moment = dt.datetime.fromisoformat(when)
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         record = tides.record_for(connection, gauge, moment, moment)
     click.echo(f"{gauge} at {when}: {record.height_at(moment):+.3f} ft")

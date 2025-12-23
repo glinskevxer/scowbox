@@ -7,11 +7,11 @@ import datetime as dt
 import click
 
 from scowbox.boxmeasure.box import measure
+from scowbox.cli.context import opened
 from scowbox.errors import MissingError
 from scowbox.model.placement import Grade, PlacementTicket
 from scowbox.model.scow import BoxReading, Corner, Scow, ScowTrip
 from scowbox.store import scows, trips
-from scowbox.store.book import book
 from scowbox.units.clock import moment
 
 CORNERS = {
@@ -39,7 +39,7 @@ def add_scow(
 ) -> None:
     """Put a scow in the book."""
     record = Scow(ident, name, length, width, depth)
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         scows.add(connection, record)
     click.echo(record.describe())
 
@@ -48,7 +48,7 @@ def add_scow(
 @click.pass_context
 def list_scows(ctx: click.Context) -> None:
     """Every scow in the fleet."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = scows.listed(connection)
     if not found:
         click.echo("no scows")
@@ -91,7 +91,7 @@ def add_trip(
         loaded_on=loaded_on.date(),
         placement=placement,
     )
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         trips.add(connection, record)
     click.echo(f"{record.ident} {record.scow} out of {record.reach} for {record.placement}")
 
@@ -110,7 +110,7 @@ def measure_trip(
     """Take a box measure on a trip."""
     loaded = {"pb": pb, "sb": sb, "ps": ps, "ss": ss}
     readings = tuple(BoxReading(corner, light, loaded[key]) for key, corner in CORNERS.items())
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         trips.measure(connection, ident, readings)
         held = trips.get(connection, ident)
         got = measure(scows.get(connection, held.scow), held)
@@ -142,7 +142,7 @@ def release_trip(
     ctx: click.Context, ident: str, area: str, day: dt.datetime, clock: str, grade: str
 ) -> None:
     """Write the placement ticket that closes a trip out."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         held = trips.get(connection, ident)
         got = measure(scows.get(connection, held.scow), held)
         ticket = PlacementTicket(
@@ -161,7 +161,7 @@ def release_trip(
 @click.pass_context
 def list_trips(ctx: click.Context, reach: str | None) -> None:
     """Trips in the book, oldest first."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = trips.for_reach(connection, reach) if reach else trips.listed(connection)
         waiting = set(trips.untick(connection))
     if not found:
@@ -179,7 +179,7 @@ def list_trips(ctx: click.Context, reach: str | None) -> None:
 @click.pass_context
 def open_trips(ctx: click.Context) -> None:
     """Trips that left with no placement ticket against them."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         waiting = trips.untick(connection)
     if not waiting:
         click.echo("every trip is ticketed")
@@ -193,7 +193,7 @@ def open_trips(ctx: click.Context) -> None:
 @click.pass_context
 def show_trip(ctx: click.Context, ident: str) -> None:
     """One trip, its box measure and its ticket."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         held = trips.get(connection, ident)
         fleet = scows.get(connection, held.scow)
         got = measure(fleet, held) if held.measured else None

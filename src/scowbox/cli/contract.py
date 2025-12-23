@@ -6,9 +6,9 @@ import datetime as dt
 
 import click
 
+from scowbox.cli.context import opened
 from scowbox.model.contract import Contract, LineItem, Unit
 from scowbox.store import contracts
-from scowbox.store.book import book
 from scowbox.units.money import Money
 
 
@@ -54,7 +54,7 @@ def add_contract(
         retainage=retainage,
         liquidated=Money.parse(liquidated),
     )
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         contracts.add(connection, record)
     click.echo(f"{record.number}, {record.days} days, complete {record.completion}")
 
@@ -90,7 +90,7 @@ def add_item(
         group=group,
         estimated=estimated,
     )
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         held = contracts.only(connection)
         contracts.add_item(connection, held.number, item)
     click.echo(f"{item.ident} {item.description} at {item.unit_price} per {item.unit.value}")
@@ -100,7 +100,7 @@ def add_item(
 @click.pass_context
 def show_contract(ctx: click.Context) -> None:
     """The contract and its whole bid schedule."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         held = contracts.only(connection)
     click.echo(held.number)
     click.echo(f"  awarded    {held.awarded}")

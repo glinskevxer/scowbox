@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import click
 
-from scowbox.store.book import book as open_book
+from scowbox.cli.context import opened
 from scowbox.store.book import counts
 from scowbox.store.care import backup, compact, health
 from scowbox.store.migrations import latest
@@ -19,7 +19,7 @@ def book() -> None:
 @click.pass_context
 def verify(ctx: click.Context) -> None:
     """Ask sqlite and the schema whether anything is wrong."""
-    with open_book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = health(connection)
     click.echo(f"schema     version {found.version} of {latest()}")
     click.echo(f"integrity  {found.integrity}")
@@ -36,7 +36,7 @@ def verify(ctx: click.Context) -> None:
 @click.pass_context
 def show_counts(ctx: click.Context) -> None:
     """How many rows the book holds, table by table."""
-    with open_book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         held = counts(connection)
     for name, number in sorted(held.items()):
         click.echo(f"{name:<20}{number:>10,}")
@@ -48,7 +48,7 @@ def show_counts(ctx: click.Context) -> None:
 @click.pass_context
 def take_backup(ctx: click.Context, where: str) -> None:
     """Copy the book somewhere else without overwriting anything."""
-    with open_book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         made = backup(connection, where)
     click.echo(f"copied to {made}")
 
@@ -57,7 +57,7 @@ def take_backup(ctx: click.Context, where: str) -> None:
 @click.pass_context
 def compact_book(ctx: click.Context) -> None:
     """Vacuum the book and report what it gave back."""
-    with open_book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         given = compact(connection)
     if given < 0:
         click.echo(f"{-given:,} bytes taken; the book was too small to gain by it")

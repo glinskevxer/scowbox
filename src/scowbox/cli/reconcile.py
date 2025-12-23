@@ -7,12 +7,12 @@ import datetime as dt
 import click
 
 from scowbox.boxmeasure.bulking import materials, typical
+from scowbox.cli.context import opened
 from scowbox.errors import MissingError, RuleError
 from scowbox.job.quantities import determine_reach
 from scowbox.measure.governing import Determination
 from scowbox.model.reconciliation import Accepted, Reconciliation
 from scowbox.store import reaches, reconciliations
-from scowbox.store.book import book
 from scowbox.units.volume import Yards
 
 
@@ -41,7 +41,7 @@ def _line(held: Determination) -> str:
 def open_reaches(ctx: click.Context, material: str) -> None:
     """Reaches whose two measurements disagree and are not settled."""
     found = []
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         for reach in reaches.listed(connection):
             try:
                 held = determine_reach(connection, reach.ident, typical(material))
@@ -89,7 +89,7 @@ def settle(
         note=note,
         quantity=None if quantity is None else Yards.of_yards(quantity),
     )
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         if over:
             reconciliations.replace(connection, record)
         else:
@@ -101,7 +101,7 @@ def settle(
 @click.pass_context
 def list_settlements(ctx: click.Context) -> None:
     """Every reconciliation in the book."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = reconciliations.listed(connection)
     if not found:
         click.echo("no reconciliations")
@@ -117,6 +117,6 @@ def list_settlements(ctx: click.Context) -> None:
 @click.pass_context
 def drop(ctx: click.Context, reach: str) -> None:
     """Take a reconciliation back out, which puts the reach back in dispute."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         reconciliations.remove(connection, reach)
     click.echo(f"{reach} is back in dispute")

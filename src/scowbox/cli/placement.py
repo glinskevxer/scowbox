@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import click
 
+from scowbox.cli.context import opened
 from scowbox.measure.placing import standing
 from scowbox.model.placement import Ground, PlacementArea
 from scowbox.store import placements, trips
-from scowbox.store.book import book
 from scowbox.units.volume import Yards
 
 
@@ -44,7 +44,7 @@ def add_placement(
         permit=permit,
         capacity=None if capacity is None else Yards.of_yards(capacity),
     )
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         placements.add(connection, area)
     click.echo(f"{area.ident} {area.name}, {area.ground.value}, permit {area.permit}")
 
@@ -53,7 +53,7 @@ def add_placement(
 @click.pass_context
 def list_placements(ctx: click.Context) -> None:
     """Every placement area and how full it is."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = placements.listed(connection)
         held = {
             area.ident: standing(area, trips.tickets_for_area(connection, area.ident))
@@ -76,7 +76,7 @@ def list_placements(ctx: click.Context) -> None:
 @click.pass_context
 def show_placement(ctx: click.Context, ident: str) -> None:
     """One placement area, what it takes and what is in it."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         area = placements.get(connection, ident)
         total = standing(area, trips.tickets_for_area(connection, ident))
     click.echo(f"{area.ident}  {area.name}")

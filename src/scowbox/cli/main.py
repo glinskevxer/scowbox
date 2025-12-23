@@ -8,6 +8,7 @@ import click
 
 from scowbox import __version__
 from scowbox.cli.book import book as book_group
+from scowbox.cli.context import BOOK, book_path, opened
 from scowbox.cli.contract import contract
 from scowbox.cli.estimate import estimate
 from scowbox.cli.placement import placement
@@ -22,7 +23,7 @@ from scowbox.cli.template import template
 from scowbox.cli.tide import tide
 from scowbox.cli.window import window
 from scowbox.errors import ScowboxError, code_of
-from scowbox.store.book import book, counts
+from scowbox.store.book import counts
 
 
 @click.group()
@@ -38,7 +39,7 @@ from scowbox.store.book import book, counts
 def cli(ctx: click.Context, book: str) -> None:
     """Measurement and payment for a maintenance dredging contract."""
     ctx.ensure_object(dict)
-    ctx.obj["book"] = book
+    ctx.obj[BOOK] = book
 
 
 @cli.command()
@@ -53,17 +54,16 @@ def about() -> None:
 @click.pass_context
 def init(ctx: click.Context) -> None:
     """Make a project book, or bring an existing one up to date."""
-    where = ctx.obj["book"]
-    with book(where, create=True):
+    with opened(ctx, create=True):
         pass
-    click.echo(f"book at {where}")
+    click.echo(f"book at {book_path(ctx)}")
 
 
 @cli.command("counts")
 @click.pass_context
 def show_counts(ctx: click.Context) -> None:
     """How many rows the book holds, table by table."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         for name, number in sorted(counts(connection).items()):
             click.echo(f"{name:<16}{number:>8,}")
 

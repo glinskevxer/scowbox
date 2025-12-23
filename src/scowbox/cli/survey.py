@@ -6,10 +6,10 @@ import datetime as dt
 
 import click
 
+from scowbox.cli.context import opened
 from scowbox.feed.soundings import kept, parse_file, refused
 from scowbox.model.survey import Survey, SurveyKind
 from scowbox.store import surveys
-from scowbox.store.book import book
 
 
 @click.group()
@@ -57,7 +57,7 @@ def add_survey(
         transducer_draft=draft,
         gauge=gauge,
     )
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         surveys.add(connection, record)
     click.echo(f"{record.ident} {record.kind.value} of {record.reach} on {record.taken_on}")
 
@@ -69,7 +69,7 @@ def add_survey(
 @click.pass_context
 def load_survey(ctx: click.Context, ident: str, export: str, show_refused: bool) -> None:
     """Load a sounding export into a survey, replacing what is there."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         header = surveys.get(connection, ident)
         readings = parse_file(export, header.taken_on)
         gone, arrived = surveys.load(connection, ident, kept(readings))
@@ -87,7 +87,7 @@ def load_survey(ctx: click.Context, ident: str, export: str, show_refused: bool)
 @click.pass_context
 def list_surveys(ctx: click.Context, reach: str | None) -> None:
     """Every survey in the book, oldest first."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = surveys.for_reach(connection, reach) if reach else surveys.listed(connection)
     if not found:
         click.echo("no surveys")
@@ -104,7 +104,7 @@ def list_surveys(ctx: click.Context, reach: str | None) -> None:
 @click.pass_context
 def show_survey(ctx: click.Context, ident: str) -> None:
     """One survey with a count of what it holds."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         record = surveys.full(connection, ident)
     click.echo(f"{record.ident}  {record.kind.value} of {record.reach}")
     click.echo(f"  taken      {record.taken_on} by {record.vessel}")

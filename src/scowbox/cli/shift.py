@@ -6,11 +6,11 @@ import datetime as dt
 
 import click
 
+from scowbox.cli.context import opened
 from scowbox.model.plant import Dredge, Plant
 from scowbox.model.shift import Downtime, Reason, Shift
 from scowbox.pay.timeloss import credited_days, standby_days, tally
 from scowbox.store import shifts
-from scowbox.store.book import book
 from scowbox.units.clock import moment
 
 
@@ -33,7 +33,7 @@ def shift() -> None:
 def add_dredge(ctx: click.Context, ident: str, name: str, plant: str, operator: str) -> None:
     """Put a dredge in the book."""
     record = Dredge(ident, name, Plant(plant), operator)
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         shifts.add_dredge(connection, record)
     click.echo(record.describe())
 
@@ -69,7 +69,7 @@ def log_shift(
         began=moment(day.date(), began),
         ended=moment(day.date(), ended),
     )
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         shifts.add(connection, record)
     click.echo(f"{record.ident} {record.dredge} on {record.reach}, {record.gross_hours:g} hours")
 
@@ -90,7 +90,7 @@ def stop_shift(
     ctx: click.Context, ident: str, began: str, ended: str, reason: str, note: str
 ) -> None:
     """Add an interruption to a shift already logged."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         held = shifts.get(connection, ident)
         interruption = Downtime(
             moment(held.day, began), moment(held.day, ended), Reason(reason), note
@@ -107,7 +107,7 @@ def stop_shift(
 @click.pass_context
 def list_shifts(ctx: click.Context, reach: str | None) -> None:
     """Shifts in the book, oldest first."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = shifts.for_reach(connection, reach) if reach else shifts.listed(connection)
     if not found:
         click.echo("no shifts")
@@ -138,7 +138,7 @@ def list_shifts(ctx: click.Context, reach: str | None) -> None:
 @click.pass_context
 def shift_time(ctx: click.Context, first: dt.datetime, last: dt.datetime, share: float) -> None:
     """Add the shifts up and sort the downtime three ways."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = shifts.between(connection, first.date(), last.date())
     got = tally(found)
     click.echo(f"shifts       {got.shifts:,}")

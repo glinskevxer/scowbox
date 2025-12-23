@@ -5,8 +5,8 @@ from __future__ import annotations
 import click
 
 from scowbox.boxmeasure.bulking import materials, typical
+from scowbox.cli.context import opened
 from scowbox.job.quantities import by_group, determine_reach, unmeasured
-from scowbox.store.book import book
 
 MATERIAL = click.option(
     "--material",
@@ -45,7 +45,7 @@ def reach_quantity(
     ctx: click.Context, ident: str, material: str, deduction: float, tolerance: float
 ) -> None:
     """Measure one reach every way its method allows."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = determine_reach(
             connection,
             ident,
@@ -72,7 +72,7 @@ def reach_quantity(
 @click.pass_context
 def group_quantities(ctx: click.Context, material: str, deduction: float) -> None:
     """Pay quantities gathered into the groups the bid schedule bills by."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         gathered = by_group(connection, typical(material), deduction=deduction)
     if not gathered:
         click.echo("nothing measured yet")
@@ -86,7 +86,7 @@ def group_quantities(ctx: click.Context, material: str, deduction: float) -> Non
 @click.pass_context
 def quantity_gaps(ctx: click.Context, material: str) -> None:
     """Reaches the book cannot measure yet, and why."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         missing = unmeasured(connection, typical(material))
     if not missing:
         click.echo("every reach is measured")

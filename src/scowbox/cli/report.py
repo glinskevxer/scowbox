@@ -7,13 +7,13 @@ import datetime as dt
 import click
 
 from scowbox.boxmeasure.bulking import materials, typical
+from scowbox.cli.context import opened
 from scowbox.report import audit as audit_report
 from scowbox.report import day as day_report
 from scowbox.report import export as export_sheets
 from scowbox.report import production as production_report
 from scowbox.report import reach as reach_report
 from scowbox.report import season as season_report
-from scowbox.store.book import book
 
 
 @click.group()
@@ -32,7 +32,7 @@ def report() -> None:
 @click.pass_context
 def day(ctx: click.Context, when: dt.datetime) -> None:
     """Everything the book holds about one day."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         lines = day_report.render(connection, when.date())
     for line in lines:
         click.echo(line)
@@ -57,7 +57,7 @@ def day(ctx: click.Context, when: dt.datetime) -> None:
 @click.pass_context
 def reach(ctx: click.Context, ident: str, material: str, deduction: float) -> None:
     """One reach, its records and its quantity."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         lines = reach_report.render(connection, ident, typical(material), deduction=deduction)
     for line in lines:
         click.echo(line)
@@ -81,7 +81,7 @@ def reach(ctx: click.Context, ident: str, material: str, deduction: float) -> No
 @click.pass_context
 def season(ctx: click.Context, material: str, deduction: float) -> None:
     """Where the job stands today."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         lines = season_report.render(connection, typical(material), deduction=deduction)
     for line in lines:
         click.echo(line)
@@ -97,7 +97,7 @@ def season(ctx: click.Context, material: str, deduction: float) -> None:
 @click.pass_context
 def audit(ctx: click.Context, closed_through: dt.datetime | None) -> None:
     """Every place the records and the permits disagree."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         lines = audit_report.render(connection, closed_through.date() if closed_through else None)
     for line in lines:
         click.echo(line)
@@ -108,7 +108,7 @@ def audit(ctx: click.Context, closed_through: dt.datetime | None) -> None:
 @click.pass_context
 def export(ctx: click.Context, where: str) -> None:
     """Write the book out as comma separated files."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         written = export_sheets.write(connection, where)
     for path in written:
         click.echo(str(path))
@@ -126,7 +126,7 @@ def export(ctx: click.Context, where: str) -> None:
 @click.pass_context
 def production(ctx: click.Context, reach: str | None, material: str) -> None:
     """Yards moved against the hours it took to move them."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         lines = production_report.render(connection, typical(material), reach=reach)
     for line in lines:
         click.echo(line)

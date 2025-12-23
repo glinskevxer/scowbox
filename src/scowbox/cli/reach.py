@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import click
 
+from scowbox.cli.context import opened
 from scowbox.cli.options import template_of, template_options
 from scowbox.model.channel import Method, Reach
 from scowbox.store import reaches
-from scowbox.store.book import book
 from scowbox.units.station import Reachline
 
 
@@ -54,7 +54,7 @@ def add_reach(
         method=Method(method),
         group=group,
     )
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         reaches.add(connection, record)
     click.echo(f"{record.ident} {record.name} {record.line}")
 
@@ -64,7 +64,7 @@ def add_reach(
 @click.pass_context
 def list_reaches(ctx: click.Context, group: str | None) -> None:
     """Every reach in the book, down the channel."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         found = reaches.in_group(connection, group) if group else reaches.listed(connection)
     if not found:
         click.echo("no reaches")
@@ -81,7 +81,7 @@ def list_reaches(ctx: click.Context, group: str | None) -> None:
 @click.pass_context
 def show_reach(ctx: click.Context, ident: str) -> None:
     """One reach in full."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         record = reaches.get(connection, ident)
     click.echo(f"{record.ident}  {record.name}")
     click.echo(f"  station    {record.line}  ({record.length:,.0f} ft)")
@@ -98,6 +98,6 @@ def show_reach(ctx: click.Context, ident: str) -> None:
 @click.pass_context
 def remove_reach(ctx: click.Context, ident: str) -> None:
     """Take a reach out of the book."""
-    with book(ctx.obj["book"]) as connection:
+    with opened(ctx) as connection:
         reaches.remove(connection, ident)
     click.echo(f"removed {ident}")
