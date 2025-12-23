@@ -243,6 +243,13 @@ Write the book out as comma separated files.
 
 Arguments: `where`
 
+## `scowbox report production`
+
+Yards moved against the hours it took to move them.
+
+- `--reach` — Only this reach.
+- `--material` — Material class, which sets the bulking factor.
+
 ## `scowbox report reach`
 
 One reach, its records and its quantity.

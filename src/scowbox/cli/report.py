@@ -10,6 +10,7 @@ from scowbox.boxmeasure.bulking import materials, typical
 from scowbox.report import audit as audit_report
 from scowbox.report import day as day_report
 from scowbox.report import export as export_sheets
+from scowbox.report import production as production_report
 from scowbox.report import reach as reach_report
 from scowbox.report import season as season_report
 from scowbox.store.book import book
@@ -111,3 +112,21 @@ def export(ctx: click.Context, where: str) -> None:
         written = export_sheets.write(connection, where)
     for path in written:
         click.echo(str(path))
+
+
+@report.command("production")
+@click.option("--reach", default=None, help="Only this reach.")
+@click.option(
+    "--material",
+    type=click.Choice(materials()),
+    default="silt",
+    show_default=True,
+    help="Material class, which sets the bulking factor.",
+)
+@click.pass_context
+def production(ctx: click.Context, reach: str | None, material: str) -> None:
+    """Yards moved against the hours it took to move them."""
+    with book(ctx.obj["book"]) as connection:
+        lines = production_report.render(connection, typical(material), reach=reach)
+    for line in lines:
+        click.echo(line)
