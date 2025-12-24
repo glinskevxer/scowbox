@@ -55,14 +55,21 @@ class SurveyQuantity:
         return round(self.sections / offered, 2)
 
 
-def _profiles(
+def profiles_of(
     survey: Survey,
     tide: TideRecord,
     stations: list[Station],
-    corridor: float,
-    squat: float,
-    index: float,
+    *,
+    corridor: float = DEFAULT_CORRIDOR_FEET,
+    squat: float = 0.0,
+    index: float = 0.0,
 ) -> tuple[dict[Station, Profile], int]:
+    """Reduce a survey and gather it onto sections, keyed by station.
+
+    Shared with the shoaling rules, which pair the same two surveys the other
+    way round. Two copies of this would be two chances for the corridor to be
+    applied one way here and another way there.
+    """
     shots = reduce_survey(survey, tide, squat=squat, index=index)
     caught = gather(shots, stations, corridor)
     return {p.station: p for p in caught.profiles}, caught.stray
@@ -83,8 +90,12 @@ def survey_quantity(
     """Work a pair of surveys up into a quantity for one reach."""
     _check_pair(reach, before, after)
     stations = reach.line.cuts(interval)
-    ahead, stray_before = _profiles(before, before_tide, stations, corridor, squat, index)
-    behind, stray_after = _profiles(after, after_tide, stations, corridor, squat, index)
+    ahead, stray_before = profiles_of(
+        before, before_tide, stations, corridor=corridor, squat=squat, index=index
+    )
+    behind, stray_after = profiles_of(
+        after, after_tide, stations, corridor=corridor, squat=squat, index=index
+    )
     prism = Prism.of_template(reach.template, Cut.PAY)
     areas = []
     unpaired = []
