@@ -14,6 +14,7 @@ from scowbox.report import export as export_sheets
 from scowbox.report import production as production_report
 from scowbox.report import reach as reach_report
 from scowbox.report import season as season_report
+from scowbox.report import shoaling as shoaling_report
 
 
 @click.group()
@@ -128,5 +129,27 @@ def production(ctx: click.Context, reach: str | None, material: str) -> None:
     """Yards moved against the hours it took to move them."""
     with opened(ctx) as connection:
         lines = production_report.render(connection, typical(material), reach=reach)
+    for line in lines:
+        click.echo(line)
+
+
+@report.command("shoaling")
+@click.option(
+    "--min-days",
+    type=int,
+    default=30,
+    show_default=True,
+    help="Shortest interval a rate is taken over.",
+)
+@click.option("--reach", default=None, help="List the quiet intervals on this reach.")
+@click.pass_context
+def shoaling(ctx: click.Context, min_days: int, reach: str | None) -> None:
+    """How fast the channel is filling back in."""
+    with opened(ctx) as connection:
+        lines = (
+            shoaling_report.intervals(connection, reach)
+            if reach
+            else shoaling_report.render(connection, min_days=min_days)
+        )
     for line in lines:
         click.echo(line)

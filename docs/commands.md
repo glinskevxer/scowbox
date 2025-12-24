@@ -266,6 +266,13 @@ Where the job stands today.
 - `--material` — Material class, which sets the bulking factor.
 - `--deduction` — Share of a scow quantity that falls outside the prism.
 
+## `scowbox report shoaling`
+
+How fast the channel is filling back in.
+
+- `--min-days` — Shortest interval a rate is taken over.
+- `--reach` — List the quiet intervals on this reach.
+
 ## `scowbox scow`
 
 The scow fleet.
