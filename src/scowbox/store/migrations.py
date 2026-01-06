@@ -285,6 +285,25 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        11,
+        "modifications",
+        (
+            """
+            CREATE TABLE modification (
+                number TEXT NOT NULL,
+                contract TEXT NOT NULL REFERENCES contract (number) ON DELETE CASCADE,
+                signed_on TEXT NOT NULL,
+                change TEXT NOT NULL,
+                description TEXT NOT NULL,
+                days INTEGER NOT NULL DEFAULT 0,
+                item TEXT NOT NULL DEFAULT '',
+                price INTEGER,
+                PRIMARY KEY (contract, number)
+            )
+            """,
+        ),
+    ),
 )
 
 

@@ -11,6 +11,7 @@ from scowbox.cli.book import book as book_group
 from scowbox.cli.context import BOOK, book_path, opened
 from scowbox.cli.contract import contract
 from scowbox.cli.estimate import estimate
+from scowbox.cli.modification import modification
 from scowbox.cli.placement import placement
 from scowbox.cli.quantity import quantity
 from scowbox.cli.reach import reach
@@ -78,6 +79,7 @@ cli.add_command(trip)
 cli.add_command(shift)
 cli.add_command(quantity)
 cli.add_command(contract)
+cli.add_command(modification)
 cli.add_command(estimate)
 cli.add_command(report)
 cli.add_command(book_group)

@@ -99,6 +99,37 @@ Work out the next estimate and put it in the book.
 
 Make a project book, or bring an existing one up to date.
 
+## `scowbox modification`
+
+Signed modifications and what they change.
+
+## `scowbox modification add`
+
+Put a signed modification in the book.
+
+Arguments: `number`
+
+- `--on` — Day signed.
+- `--change` — What the modification changes.
+- `--description` — What it did.
+- `--days` — Days added, on a time extension.
+- `--item` — Line item, on a price or a new item.
+- `--price` — Unit price, on a price or a new item.
+
+## `scowbox modification current`
+
+The contract as it stands with every modification applied.
+
+## `scowbox modification drop`
+
+Take a modification back out of the book.
+
+Arguments: `number`
+
+## `scowbox modification list`
+
+Every modification on the contract, oldest first.
+
 ## `scowbox placement`
 
 Permitted placement areas and what is in them.

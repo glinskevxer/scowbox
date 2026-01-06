@@ -16,11 +16,12 @@ from dataclasses import dataclass
 
 from scowbox.boxmeasure.bulking import Bulking
 from scowbox.errors import RuleError
+from scowbox.job.contract import current
 from scowbox.job.quantities import by_group, unmeasured
 from scowbox.measure.governing import TOLERANCE
 from scowbox.pay.estimate import Estimate, build
 from scowbox.pay.timeloss import extension
-from scowbox.store import contracts, estimates, shifts
+from scowbox.store import estimates, shifts
 
 
 @dataclass(frozen=True)
@@ -37,8 +38,12 @@ class Draft:
 
 
 def days_late(connection: sqlite3.Connection, through: dt.date) -> tuple[int, int]:
-    """How many days past completion, and how many were earned back."""
-    contract = contracts.only(connection)
+    """How many days past completion, and how many were earned back.
+
+    Against the modified contract time. A time extension signed in June is not
+    an argument to be had again every month.
+    """
+    contract = current(connection)
     earned = extension(shifts.listed(connection))
     return contract.days_late(through, extension=earned), earned
 
@@ -53,7 +58,7 @@ def draft(
     lump_sums: dict[str, float] | None = None,
 ) -> Draft:
     """Build the next estimate without writing it."""
-    contract = contracts.only(connection)
+    contract = current(connection)
     previous = estimates.latest(connection, contract.number)
     if previous is not None and through <= previous.through:
         raise RuleError(f"estimate {previous.number} already runs through {previous.through}")
