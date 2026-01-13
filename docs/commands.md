@@ -75,6 +75,7 @@ Work out the next estimate without writing it.
 - `--material` — Material class, which sets the bulking factor.
 - `--deduction` — Share of a scow quantity that falls outside the prism.
 - `--claim` — A lump sum item and share, as LI-0009=1.0
+- `--final` — Close the contract and release retainage.
 
 ## `scowbox estimate list`
 
@@ -94,6 +95,7 @@ Work out the next estimate and put it in the book.
 - `--material` — Material class, which sets the bulking factor.
 - `--deduction` — Share of a scow quantity that falls outside the prism.
 - `--claim` — A lump sum item and share, as LI-0009=1.0
+- `--final` — Close the contract and release retainage.
 
 ## `scowbox init`
 

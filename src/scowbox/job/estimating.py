@@ -21,7 +21,7 @@ from scowbox.job.quantities import by_group, unmeasured
 from scowbox.measure.governing import TOLERANCE
 from scowbox.pay.estimate import Estimate, build
 from scowbox.pay.timeloss import extension
-from scowbox.store import estimates, shifts
+from scowbox.store import estimates, shifts, trips
 
 
 @dataclass(frozen=True)
@@ -31,10 +31,16 @@ class Draft:
     estimate: Estimate
     left_out: tuple[tuple[str, str], ...]
     days_earned: int
+    open_trips: tuple[str, ...] = ()
 
     @property
     def complete(self) -> bool:
         return not self.left_out
+
+    @property
+    def closeable(self) -> bool:
+        """True when nothing outstanding stops this being the final estimate."""
+        return self.complete and not self.open_trips
 
 
 def days_late(connection: sqlite3.Connection, through: dt.date) -> tuple[int, int]:
@@ -56,13 +62,26 @@ def draft(
     deduction: float = 0.0,
     tolerance: float = TOLERANCE,
     lump_sums: dict[str, float] | None = None,
+    final: bool = False,
 ) -> Draft:
-    """Build the next estimate without writing it."""
+    """Build the next estimate without writing it.
+
+    A final estimate releases the retainage, so it is the one estimate this
+    program refuses to build on a book that still has work in it. Everything
+    else is provisional and corrects itself next month; the final one does not.
+    """
     contract = current(connection)
     previous = estimates.latest(connection, contract.number)
     if previous is not None and through <= previous.through:
         raise RuleError(f"estimate {previous.number} already runs through {previous.through}")
     late, earned = days_late(connection, through)
+    left_out = unmeasured(connection, bulking)
+    waiting = trips.untick(connection)
+    if final and (left_out or waiting):
+        raise RuleError(
+            f"the final estimate needs everything measured and ticketed:"
+            f" {len(left_out)} reaches unmeasured, {len(waiting)} trips without a ticket"
+        )
     return Draft(
         estimate=build(
             contract,
@@ -72,9 +91,11 @@ def draft(
             lump_sums or {},
             previous,
             days_late=late,
+            final=final,
         ),
-        left_out=unmeasured(connection, bulking),
+        left_out=left_out,
         days_earned=earned,
+        open_trips=waiting,
     )
 
 

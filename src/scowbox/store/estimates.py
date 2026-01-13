@@ -21,7 +21,9 @@ from scowbox.store.sqlite import rows, written
 from scowbox.store.writing import inserting
 from scowbox.units.money import Money
 
-HEADER = "ident, contract, number, through, retainage, days_late, liquidated_rate, paid_before"
+HEADER = (
+    "ident, contract, number, through, retainage, days_late, liquidated_rate, paid_before, final"
+)
 LINE = "estimate, item, description, unit, unit_price, to_date, previous"
 
 
@@ -41,7 +43,7 @@ def add(connection: sqlite3.Connection, estimate: Estimate) -> None:
     with written(connection):
         with inserting("estimate", estimate.ident, references="contract"):
             connection.execute(
-                f"INSERT INTO estimate ({HEADER}) VALUES (?,?,?,?,?,?,?,?)",
+                f"INSERT INTO estimate ({HEADER}) VALUES (?,?,?,?,?,?,?,?,?)",
                 (
                     estimate.ident,
                     estimate.contract,
@@ -51,6 +53,7 @@ def add(connection: sqlite3.Connection, estimate: Estimate) -> None:
                     estimate.days_late,
                     estimate.liquidated_rate.cents,
                     estimate.paid_before.cents,
+                    int(estimate.final),
                 ),
             )
         connection.executemany(
@@ -91,6 +94,7 @@ def get(connection: sqlite3.Connection, ident: str) -> Estimate:
         days_late=header["days_late"],
         liquidated_rate=Money(header["liquidated_rate"]),
         paid_before=Money(header["paid_before"]),
+        final=bool(header["final"]),
     )
 
 

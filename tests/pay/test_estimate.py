@@ -155,3 +155,31 @@ def test_an_item_added_after_the_previous_estimate_starts_at_nothing() -> None:
     )
     assert second.line("LI-0002").previous == 0.0
     assert second.line("LI-0002").this_period == 5000
+
+
+def test_an_ordinary_estimate_withholds_retainage() -> None:
+    got = build(a_contract(), 1, THROUGH, {"base": Yards.of_yards(100000)})
+    assert not got.final
+    assert got.retained == Money.parse("$36,750.00")
+    assert got.released == Money.zero()
+
+
+def test_the_final_estimate_releases_it() -> None:
+    got = build(a_contract(), 9, THROUGH, {"base": Yards.of_yards(100000)}, final=True)
+    assert got.final
+    assert got.retained == Money.zero()
+    assert got.released == Money.parse("$36,750.00")
+
+
+def test_the_final_estimate_pays_the_retainage_out() -> None:
+    running = build(a_contract(), 1, THROUGH, {"base": Yards.of_yards(100000)})
+    closing = build(
+        a_contract(),
+        2,
+        dt.date(2025, 4, 30),
+        {"base": Yards.of_yards(100000)},
+        previous=running,
+        final=True,
+    )
+    assert closing.payable == closing.earned
+    assert closing.due == running.retained

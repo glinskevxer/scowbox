@@ -192,3 +192,34 @@ def test_the_lateness_reaches_the_estimate(open_book: sqlite3.Connection) -> Non
     got = draft(open_book, CONTRACT.completion + dt.timedelta(days=4), SILT)
     assert got.estimate.days_late == 4
     assert got.estimate.liquidated == Money.parse("$13,600.00")
+
+
+def test_a_final_estimate_needs_everything_measured(
+    open_book: sqlite3.Connection,
+) -> None:
+    with pytest.raises(RuleError, match="everything measured and ticketed"):
+        draft(open_book, THROUGH, SILT, final=True)
+
+
+def test_a_final_estimate_on_a_clean_book_closes_it(
+    open_book: sqlite3.Connection,
+) -> None:
+    load(open_book)
+    got = draft(open_book, THROUGH, SILT, final=True)
+    assert got.closeable
+    assert got.estimate.final
+    assert got.estimate.retained == Money.zero()
+
+
+def test_a_draft_that_is_not_final_is_built_either_way(
+    open_book: sqlite3.Connection,
+) -> None:
+    got = draft(open_book, THROUGH, SILT)
+    assert not got.closeable
+    assert not got.estimate.final
+
+
+def test_the_final_flag_survives_the_book(open_book: sqlite3.Connection) -> None:
+    load(open_book)
+    write(open_book, draft(open_book, THROUGH, SILT, final=True))
+    assert estimates.get(open_book, "EST-001").final

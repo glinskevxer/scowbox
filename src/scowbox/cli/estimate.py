@@ -57,6 +57,7 @@ def _print(found: Estimate) -> None:
     help="Share of a scow quantity that falls outside the prism.",
 )
 @click.option("--claim", multiple=True, help="A lump sum item and share, as LI-0009=1.0")
+@click.option("--final", is_flag=True, help="Close the contract and release retainage.")
 @click.pass_context
 def draft_estimate(
     ctx: click.Context,
@@ -64,6 +65,7 @@ def draft_estimate(
     material: str,
     deduction: float,
     claim: tuple[str, ...],
+    final: bool,
 ) -> None:
     """Work out the next estimate without writing it."""
     lumps = dict(_claim(one) for one in claim)
@@ -74,6 +76,7 @@ def draft_estimate(
             typical(material),
             deduction=deduction,
             lump_sums=lumps,
+            final=final,
         )
     _print(drafted.estimate)
     if drafted.days_earned:
@@ -104,6 +107,7 @@ def draft_estimate(
     help="Share of a scow quantity that falls outside the prism.",
 )
 @click.option("--claim", multiple=True, help="A lump sum item and share, as LI-0009=1.0")
+@click.option("--final", is_flag=True, help="Close the contract and release retainage.")
 @click.pass_context
 def write_estimate(
     ctx: click.Context,
@@ -111,6 +115,7 @@ def write_estimate(
     material: str,
     deduction: float,
     claim: tuple[str, ...],
+    final: bool,
 ) -> None:
     """Work out the next estimate and put it in the book."""
     lumps = dict(_claim(one) for one in claim)
@@ -121,6 +126,7 @@ def write_estimate(
             typical(material),
             deduction=deduction,
             lump_sums=lumps,
+            final=final,
         )
         written = write(connection, drafted)
     _print(written)

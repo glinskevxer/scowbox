@@ -304,6 +304,11 @@ MIGRATIONS: tuple[Migration, ...] = (
             """,
         ),
     ),
+    Migration(
+        12,
+        "final estimate",
+        ("ALTER TABLE estimate ADD COLUMN final INTEGER NOT NULL DEFAULT 0",),
+    ),
 )
 
 

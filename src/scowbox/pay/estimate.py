@@ -73,6 +73,7 @@ class Estimate:
     days_late: int = 0
     liquidated_rate: Money = NOTHING
     paid_before: Money = NOTHING
+    final: bool = False
 
     def __post_init__(self) -> None:
         if not is_ident("estimate", self.ident):
@@ -88,6 +89,16 @@ class Estimate:
 
     @property
     def retained(self) -> Money:
+        """Retainage still withheld. The final estimate releases all of it."""
+        if self.final:
+            return NOTHING
+        return self.earned.portion(self.retainage)
+
+    @property
+    def released(self) -> Money:
+        """Retainage handed back on this estimate, which is only ever the last."""
+        if not self.final:
+            return NOTHING
         return self.earned.portion(self.retainage)
 
     @property
@@ -131,6 +142,7 @@ def build(
     previous: Estimate | None = None,
     *,
     days_late: int = 0,
+    final: bool = False,
 ) -> Estimate:
     """Build an estimate from quantities by pay group and shares by line item.
 
@@ -163,4 +175,5 @@ def build(
         days_late=days_late,
         liquidated_rate=contract.liquidated,
         paid_before=NOTHING if previous is None else previous.payable,
+        final=final,
     )
