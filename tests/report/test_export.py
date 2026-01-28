@@ -18,7 +18,15 @@ from scowbox.model.scow import BoxReading, Corner, Scow, ScowTrip
 from scowbox.model.shift import Shift
 from scowbox.model.survey import Survey, SurveyKind
 from scowbox.pay.estimate import build
-from scowbox.report.export import sheets, write
+from scowbox.report.export import (
+    estimate_sheet,
+    reach_sheet,
+    sheets,
+    shift_sheet,
+    survey_sheet,
+    trip_sheet,
+    write,
+)
 from scowbox.store import (
     contracts,
     estimates,
@@ -210,3 +218,20 @@ def test_the_sheets_come_in_a_fixed_order(open_book: sqlite3.Connection) -> None
         "shifts",
         "estimates",
     ]
+
+
+def test_each_sheet_can_be_built_on_its_own(open_book: sqlite3.Connection) -> None:
+    assert reach_sheet(open_book).name == "reaches"
+    assert survey_sheet(open_book).name == "surveys"
+    assert trip_sheet(open_book).name == "trips"
+    assert shift_sheet(open_book).name == "shifts"
+    assert estimate_sheet(open_book).name == "estimates"
+
+
+def test_a_sheet_names_the_file_it_writes(open_book: sqlite3.Connection) -> None:
+    assert reach_sheet(open_book).filename == "reaches.csv"
+
+
+def test_a_sheet_carries_a_row_for_every_record(open_book: sqlite3.Connection) -> None:
+    assert len(reach_sheet(open_book).rows) == 1
+    assert len(trip_sheet(open_book).rows) == 2

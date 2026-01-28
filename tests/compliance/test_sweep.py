@@ -5,7 +5,12 @@ from __future__ import annotations
 import datetime as dt
 
 from scowbox.compliance.findings import Severity
-from scowbox.compliance.sweep import sweep
+from scowbox.compliance.sweep import (
+    shifts_against_windows,
+    sweep,
+    tickets_against_areas,
+    trips_without_tickets,
+)
 from scowbox.model.placement import Grade, Ground, PlacementArea, PlacementTicket
 from scowbox.model.scow import ScowTrip
 from scowbox.model.shift import Shift
@@ -116,3 +121,20 @@ def test_findings_come_back_worst_first() -> None:
     )
     assert got.findings[0].severity is Severity.VIOLATION
     assert got.findings[-1].severity is Severity.WARNING
+
+
+def test_the_window_check_can_be_run_on_its_own() -> None:
+    found = shifts_against_windows([a_shift()], Schedule.of([a_closure()]))
+    assert len(found) == 1
+    assert found[0].kind == "window"
+
+
+def test_the_placement_check_can_be_run_on_its_own() -> None:
+    found = tickets_against_areas([a_ticket(area="PA-006")], AREAS)
+    assert found[0].kind == "placement"
+
+
+def test_the_ticket_check_can_be_run_on_its_own() -> None:
+    found = trips_without_tickets([a_trip()], [])
+    assert found[0].kind == "ticket"
+    assert trips_without_tickets([a_trip()], ["TR-04188"]) == ()

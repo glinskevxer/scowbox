@@ -17,6 +17,8 @@ from scowbox.job.quantities import (
     determine_reach,
     last_survey,
     measured_through,
+    scow_side,
+    survey_side,
     tide_for,
     unmeasured,
 )
@@ -248,3 +250,27 @@ def test_a_zero_quantity_is_still_a_quantity(open_book: sqlite3.Connection) -> N
     load_surveys(open_book, before=42.0, after=42.0)
     gathered = by_group(open_book, SILT)
     assert gathered["base"] == Yards.zero()
+
+
+def test_the_survey_side_can_be_worked_on_its_own(open_book: sqlite3.Connection) -> None:
+    load_surveys(open_book)
+    got = survey_side(open_book, reaches.get(open_book, "RCH-012"))
+    assert got.sections == 4
+    assert got.volume.pay.hundredths > 0
+
+
+def test_the_scow_side_can_be_worked_on_its_own(open_book: sqlite3.Connection) -> None:
+    reaches.remove(open_book, "RCH-012")
+    reaches.add(open_book, a_reach(method=Method.SCOW))
+    load_scows(open_book, loads=2)
+    got = scow_side(open_book, reaches.get(open_book, "RCH-012"), SILT)
+    assert got.trips == 2
+
+
+def test_the_scow_side_refuses_a_reach_nobody_hauled(
+    open_book: sqlite3.Connection,
+) -> None:
+    reaches.remove(open_book, "RCH-012")
+    reaches.add(open_book, a_reach(method=Method.SCOW))
+    with pytest.raises(MissingError):
+        scow_side(open_book, reaches.get(open_book, "RCH-012"), SILT)

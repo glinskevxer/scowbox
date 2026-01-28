@@ -9,6 +9,7 @@ import pytest
 
 from scowbox.errors import FieldError, StateError
 from scowbox.store.sqlite import (
+    configure,
     one,
     opened,
     rows,
@@ -100,3 +101,13 @@ def test_a_whole_number_passes_through() -> None:
 def test_anything_but_a_whole_number_is_refused(value: object) -> None:
     with pytest.raises(FieldError):
         sql_integer(value)
+
+
+def test_configure_sets_the_pragmas_and_the_row_factory(tmp_path: Path) -> None:
+    connection = sqlite3.connect(str(tmp_path / "raw.sqlite3"))
+    try:
+        assert configure(connection) is connection
+        assert connection.row_factory is sqlite3.Row
+        assert one(connection, "PRAGMA foreign_keys")[0] == 1
+    finally:
+        connection.close()
