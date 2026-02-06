@@ -24,7 +24,7 @@ from scowbox.tools.scan import package_root, project_root, report
 
 NAME = "check_workflow"
 WORKFLOW = ".github/workflows/ci.yml"
-GENERATORS = ("schema_dump", "build_docs")
+GENERATORS = ("schema_dump", "build_docs", "build_glossary")
 INVOCATION = re.compile(r"\bscowbox --book \"\$book\" ([^\n|]*)")
 
 

@@ -39,6 +39,7 @@ jobs:
       - run: python -m scowbox.tools.check_workflow
       - run: python -m scowbox.tools.schema_dump --check
       - run: python -m scowbox.tools.build_docs --check
+      - run: python -m scowbox.tools.build_glossary --check
 
   tests:
     runs-on: ubuntu-latest
