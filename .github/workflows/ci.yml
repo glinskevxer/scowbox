@@ -25,6 +25,7 @@ jobs:
       - run: python -m ruff format --check .
       - run: python -m mypy
       - run: python -m scowbox.tools.check_docstrings
+      - run: python -m scowbox.tools.release_check
       - run: python -m scowbox.tools.check_layers
       - run: python -m scowbox.tools.check_clock
       - run: python -m scowbox.tools.check_printing

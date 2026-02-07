@@ -5,6 +5,6 @@ surveys and scow box measure sheets go in, pay quantities and monthly progress
 estimates come out.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 __all__ = ["__version__"]
