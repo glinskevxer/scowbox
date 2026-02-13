@@ -390,6 +390,18 @@ Arguments: `ident`, `reach`
 - `--draft` — Transducer draft in feet.
 - `--gauge` — Gauge the shots reduce against.
 
+## `scowbox survey check`
+
+Read a survey back for repeatability and coverage.
+
+Arguments: `ident`
+
+- `--nearby` — How close two shots have to be to count as the same point.
+- `--share` — Share of the template width a section has to span.
+- `--squat` — Squat in feet.
+- `--index` — Bar check in feet.
+- `--worst` — Repeats to print.
+
 ## `scowbox survey list`
 
 Every survey in the book, oldest first.

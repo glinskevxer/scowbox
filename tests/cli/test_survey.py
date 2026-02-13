@@ -115,3 +115,42 @@ def test_the_reach_filter_narrows_the_list(run: Book) -> None:
 def test_loading_into_a_survey_that_is_not_there_fails(run: Book, tmp_path: Path) -> None:
     export = an_export(tmp_path / "shots.csv", "100+00,-50,41.2,07:45")
     run("survey", "load", "SV-0099", export, ok=False)
+
+
+def test_a_clean_survey_checks_sound(run: Book, tmp_path: Path) -> None:
+    where = tmp_path / "gauge.csv"
+    where.write_text(
+        "Date Time,Water Level,Quality\n2025-03-14 06:54,2.000,v\n2025-03-14 07:06,2.000,v\n",
+        encoding="utf-8",
+    )
+    run("tide", "load", "8658120", str(where))
+    shots = an_export(
+        tmp_path / "shots.csv",
+        "100+00,-200,41.2,07:00",
+        "100+00,0,41.2,07:00",
+        "100+00,200,41.2,07:00",
+    )
+    run("survey", "load", "SV-0031", shots)
+    out = run("survey", "check", "SV-0031", "--share", "0.6")
+    assert "3 shots over 1 stations" in out
+    assert "sound" in out
+
+
+def test_a_survey_that_disagrees_with_itself_fails_the_check(run: Book, tmp_path: Path) -> None:
+    where = tmp_path / "gauge.csv"
+    where.write_text(
+        "Date Time,Water Level,Quality\n2025-03-14 06:54,2.000,v\n2025-03-14 07:06,2.000,v\n",
+        encoding="utf-8",
+    )
+    run("tide", "load", "8658120", str(where))
+    shots = an_export(
+        tmp_path / "shots.csv",
+        "100+00,-200,41.2,07:00",
+        "100+00,0,41.2,07:00",
+        "100+00,0,43.2,07:00",
+        "100+00,200,41.2,07:00",
+    )
+    run("survey", "load", "SV-0031", shots)
+    out = run("survey", "check", "SV-0031", "--share", "0.6", ok=False)
+    assert "NOT SOUND" in out
+    assert "2.00 ft apart" in out

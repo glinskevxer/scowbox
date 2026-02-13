@@ -8,6 +8,7 @@ import click
 
 from scowbox.cli.context import opened
 from scowbox.feed.soundings import kept, parse_file, refused
+from scowbox.job.checking import check_survey
 from scowbox.model.survey import Survey, SurveyKind
 from scowbox.store import surveys
 
@@ -115,3 +116,56 @@ def show_survey(ctx: click.Context, ident: str) -> None:
     if stations:
         click.echo(f"  stations   {len(stations):,} from {stations[0]} to {stations[-1]}")
     click.echo(f"  pays       {'yes' if record.kind.pays else 'no'}")
+
+
+@survey.command("check")
+@click.argument("ident")
+@click.option(
+    "--nearby",
+    type=float,
+    default=2.0,
+    show_default=True,
+    help="How close two shots have to be to count as the same point.",
+)
+@click.option(
+    "--share",
+    type=float,
+    default=0.9,
+    show_default=True,
+    help="Share of the template width a section has to span.",
+)
+@click.option("--squat", type=float, default=0.0, show_default=True, help="Squat in feet.")
+@click.option("--index", type=float, default=0.0, show_default=True, help="Bar check in feet.")
+@click.option("--worst", type=int, default=10, show_default=True, help="Repeats to print.")
+@click.pass_context
+def check(
+    ctx: click.Context,
+    ident: str,
+    nearby: float,
+    share: float,
+    squat: float,
+    index: float,
+    worst: int,
+) -> None:
+    """Read a survey back for repeatability and coverage."""
+    with opened(ctx) as connection:
+        found = check_survey(
+            connection, ident, nearby=nearby, share=share, squat=squat, index=index
+        )
+    click.echo(f"{ident}  {found.shots:,} shots over {found.stations:,} stations")
+    click.echo(f"  repeats     {len(found.repeats):,}")
+    click.echo(f"  worst       {found.worst:.2f} ft")
+    click.echo(f"  outside     {len(found.outside):,}")
+    for repeat in found.repeats[:worst]:
+        mark = " " if repeat.inside else "*"
+        click.echo(
+            f"   {mark} {repeat.station} at {repeat.offset:+.1f}:"
+            f" {repeat.readings} readings, {repeat.spread:.2f} ft apart"
+        )
+    if found.short:
+        click.echo(f"  short       {len(found.short):,} stations")
+        for station, spanned, wanted in found.short[:worst]:
+            click.echo(f"     {station}: spanned {spanned:,.0f} ft of {wanted:,.0f} ft")
+    click.echo("sound" if found.sound else "NOT SOUND")
+    if not found.sound:
+        raise SystemExit(1)
