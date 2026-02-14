@@ -24,6 +24,7 @@ from scowbox.cli.template import template
 from scowbox.cli.tide import tide
 from scowbox.cli.window import window
 from scowbox.errors import ScowboxError, code_of
+from scowbox.job.lookup import find
 from scowbox.store.book import counts
 
 
@@ -67,6 +68,16 @@ def show_counts(ctx: click.Context) -> None:
     with opened(ctx) as connection:
         for name, number in sorted(counts(connection).items()):
             click.echo(f"{name:<16}{number:>8,}")
+
+
+@cli.command("find")
+@click.argument("text")
+@click.pass_context
+def find_anything(ctx: click.Context, text: str) -> None:
+    """Say what an identifier names and what is against it."""
+    with opened(ctx) as connection:
+        for line in find(connection, text):
+            click.echo(line)
 
 
 cli.add_command(template)

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import click
 from click.testing import CliRunner
 
@@ -69,3 +71,20 @@ def test_an_abort_is_reported_as_one(monkeypatch) -> None:  # type: ignore[no-un
 def test_a_clean_run_reports_nothing(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     monkeypatch.setattr(cli, "main", lambda **_: None)
     assert run() == 0
+
+
+def test_find_says_what_an_identifier_names(tmp_path: Path) -> None:
+    from tests.cli.runner import a_book
+
+    run = a_book(tmp_path)
+    run(
+        "reach", "add", "RCH-012", "Lower Range",
+        "--begin", "100+00", "--end", "140+00", "--bottom", "400", "--depth", "42",
+    )  # fmt: skip
+    assert "RCH-012 Lower Range" in run("find", "RCH-012")
+
+
+def test_find_fails_on_something_that_is_nothing(tmp_path: Path) -> None:
+    from tests.cli.runner import a_book
+
+    a_book(tmp_path)("find", "nothing at all", ok=False)

@@ -97,6 +97,12 @@ Work out the next estimate and put it in the book.
 - `--claim` — A lump sum item and share, as LI-0009=1.0
 - `--final` — Close the contract and release retainage.
 
+## `scowbox find`
+
+Say what an identifier names and what is against it.
+
+Arguments: `text`
+
 ## `scowbox init`
 
 Make a project book, or bring an existing one up to date.
