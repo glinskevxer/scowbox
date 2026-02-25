@@ -10,11 +10,14 @@ from __future__ import annotations
 
 import datetime as dt
 import sqlite3
+from collections.abc import Sequence
 
 from scowbox.boxmeasure.box import measure
 from scowbox.compliance.findings import Severity, counted
 from scowbox.compliance.sweep import sweep
 from scowbox.errors import MissingError
+from scowbox.model.scow import ScowTrip
+from scowbox.model.shift import Shift
 from scowbox.pay.timeloss import tally
 from scowbox.report.lines import blank, heading, indent, pair, table
 from scowbox.store import placements, scows, shifts, trips, windows
@@ -37,7 +40,7 @@ def render(connection: sqlite3.Connection, day: dt.date) -> list[str]:
     return lines
 
 
-def _shifts(worked: list) -> list[str]:  # type: ignore[type-arg]
+def _shifts(worked: Sequence[Shift]) -> list[str]:
     if not worked:
         return ["No shift logged."]
     got = tally(worked)
@@ -60,7 +63,7 @@ def _shifts(worked: list) -> list[str]:  # type: ignore[type-arg]
     return lines
 
 
-def _trips(connection: sqlite3.Connection, loads: tuple) -> list[str]:  # type: ignore[type-arg]
+def _trips(connection: sqlite3.Connection, loads: Sequence[ScowTrip]) -> list[str]:
     if not loads:
         return ["No scow trip logged."]
     body = []
@@ -84,8 +87,8 @@ def _trips(connection: sqlite3.Connection, loads: tuple) -> list[str]:  # type: 
 def _findings(
     connection: sqlite3.Connection,
     day: dt.date,
-    worked: list,  # type: ignore[type-arg]
-    loads: tuple,  # type: ignore[type-arg]
+    worked: Sequence[Shift],
+    loads: Sequence[ScowTrip],
 ) -> list[str]:
     areas = {area.ident: area for area in placements.listed(connection)}
     tickets = [

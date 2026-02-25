@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from scowbox.errors import MissingError
+from scowbox.errors import FieldError, MissingError
 from scowbox.ids import kind_of
 from scowbox.store import (
     contracts,
@@ -119,7 +119,7 @@ def find(connection: sqlite3.Connection, text: str) -> list[str]:
     wanted = text.strip()
     try:
         family = kind_of(wanted).name
-    except Exception:  # noqa: BLE001
+    except FieldError:
         return _unprefixed(connection, wanted)
     reader = FAMILIES.get(family)
     if reader is None:
