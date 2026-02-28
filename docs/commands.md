@@ -282,6 +282,10 @@ Write the book out as comma separated files.
 
 Arguments: `where`
 
+## `scowbox report gauges`
+
+What the gauges cover and which surveys they leave stranded.
+
 ## `scowbox report production`
 
 Yards moved against the hours it took to move them.

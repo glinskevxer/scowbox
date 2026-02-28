@@ -11,6 +11,7 @@ from scowbox.cli.context import opened
 from scowbox.report import audit as audit_report
 from scowbox.report import day as day_report
 from scowbox.report import export as export_sheets
+from scowbox.report import gauges as gauge_report
 from scowbox.report import production as production_report
 from scowbox.report import reach as reach_report
 from scowbox.report import season as season_report
@@ -151,5 +152,15 @@ def shoaling(ctx: click.Context, min_days: int, reach: str | None) -> None:
             if reach
             else shoaling_report.render(connection, min_days=min_days)
         )
+    for line in lines:
+        click.echo(line)
+
+
+@report.command("gauges")
+@click.pass_context
+def gauges(ctx: click.Context) -> None:
+    """What the gauges cover and which surveys they leave stranded."""
+    with opened(ctx) as connection:
+        lines = gauge_report.render(connection)
     for line in lines:
         click.echo(line)
