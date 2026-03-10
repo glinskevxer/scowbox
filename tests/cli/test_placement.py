@@ -68,3 +68,20 @@ def test_an_area_that_is_not_there_fails(run: Book) -> None:
 def test_the_same_area_twice_is_refused(run: Book) -> None:
     run(*OCEAN)
     run(*OCEAN, ok=False)
+
+
+def test_an_ocean_site_forecasts_nothing_to_run_out_of(run: Book) -> None:
+    run(*OCEAN)
+    out = run("placement", "forecast", "PA-002", "--through", "2026-01-05")
+    assert "capacity   open, nothing to run out of" in out
+
+
+def test_an_empty_cell_has_no_rate_to_forecast_from(run: Book) -> None:
+    run(*CELL)
+    out = run("placement", "forecast", "PA-004", "--through", "2026-01-05")
+    assert "loads      0 over 0 days" in out
+    assert "not enough days of tickets" in out
+
+
+def test_an_area_that_is_not_there_cannot_be_forecast(run: Book) -> None:
+    run("placement", "forecast", "PA-009", "--through", "2026-01-05", ok=False)

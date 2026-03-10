@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import datetime as dt
+
 import click
 
 from scowbox.cli.context import opened
+from scowbox.measure.forecast import forecast
 from scowbox.measure.placing import standing
 from scowbox.model.placement import Ground, PlacementArea
 from scowbox.store import placements, trips
@@ -89,3 +92,35 @@ def show_placement(ctx: click.Context, ident: str) -> None:
         click.echo("  capacity   open")
     else:
         click.echo(f"  capacity   {total.capacity}, {total.share_used:.1%} used")
+
+
+@placement.command("forecast")
+@click.argument("ident")
+@click.option(
+    "--through",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="Day the forecast is made on.",
+)
+@click.pass_context
+def forecast_placement(ctx: click.Context, ident: str, through: dt.datetime) -> None:
+    """How long a placement area has left at the rate it is filling."""
+    with opened(ctx) as connection:
+        area = placements.get(connection, ident)
+        found = forecast(area, trips.tickets_for_area(connection, ident), through.date())
+    click.echo(f"{area.ident}  {area.name}")
+    click.echo(f"  loads      {found.loads:,} over {found.days:,} days")
+    click.echo(f"  placed     {found.placed}")
+    if found.open_ground:
+        click.echo("  capacity   open, nothing to run out of")
+        return
+    click.echo(f"  capacity   {found.capacity}")
+    click.echo(f"  remaining  {found.remaining}")
+    rate = found.a_day
+    if rate is None:
+        click.echo("  rate       not enough days of tickets to take a rate")
+        return
+    click.echo(f"  rate       {rate:,.1f} cy a day")
+    click.echo(f"  loads left {found.loads_left:,}")
+    click.echo(f"  days left  {found.days_left:,}")
+    click.echo(f"  full on    {found.full_on}")

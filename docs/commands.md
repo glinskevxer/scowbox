@@ -152,6 +152,14 @@ Arguments: `ident`, `name`
 - `--permit` — The permit it is placed under.
 - `--capacity` — Capacity in cubic yards.
 
+## `scowbox placement forecast`
+
+How long a placement area has left at the rate it is filling.
+
+Arguments: `ident`
+
+- `--through` — Day the forecast is made on.
+
 ## `scowbox placement list`
 
 Every placement area and how full it is.
