@@ -15,6 +15,7 @@ from scowbox.report import gauges as gauge_report
 from scowbox.report import production as production_report
 from scowbox.report import reach as reach_report
 from scowbox.report import season as season_report
+from scowbox.report import section as section_report
 from scowbox.report import shoaling as shoaling_report
 
 
@@ -162,5 +163,23 @@ def gauges(ctx: click.Context) -> None:
     """What the gauges cover and which surveys they leave stranded."""
     with opened(ctx) as connection:
         lines = gauge_report.render(connection)
+    for line in lines:
+        click.echo(line)
+
+
+@report.command("sections")
+@click.argument("ident")
+@click.option(
+    "--interval",
+    type=float,
+    default=100.0,
+    show_default=True,
+    help="Section interval in feet.",
+)
+@click.pass_context
+def sections(ctx: click.Context, ident: str, interval: float) -> None:
+    """The end areas and slice volumes behind a reach's survey quantity."""
+    with opened(ctx) as connection:
+        lines = section_report.render(connection, ident, interval=interval)
     for line in lines:
         click.echo(line)

@@ -317,6 +317,14 @@ Where the job stands today.
 - `--material` — Material class, which sets the bulking factor.
 - `--deduction` — Share of a scow quantity that falls outside the prism.
 
+## `scowbox report sections`
+
+The end areas and slice volumes behind a reach's survey quantity.
+
+Arguments: `ident`
+
+- `--interval` — Section interval in feet.
+
 ## `scowbox report shoaling`
 
 How fast the channel is filling back in.
