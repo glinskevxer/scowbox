@@ -12,8 +12,7 @@ from __future__ import annotations
 import sqlite3
 
 from scowbox.boxmeasure.bulking import Bulking
-from scowbox.errors import MissingError, RuleError
-from scowbox.job.quantities import determine_reach
+from scowbox.job.quantities import determined
 from scowbox.report.lines import blank, heading, pair, table
 from scowbox.store import reaches, surveys, trips
 
@@ -80,10 +79,9 @@ def _trips(connection: sqlite3.Connection, ident: str) -> list[str]:
 def _quantity(
     connection: sqlite3.Connection, ident: str, bulking: Bulking, deduction: float
 ) -> list[str]:
-    try:
-        found = determine_reach(connection, ident, bulking, deduction=deduction)
-    except (MissingError, RuleError) as trouble:
-        return [pair("quantity", f"not measured: {trouble}")]
+    found = determined(connection, ident, bulking, deduction=deduction)
+    if found is None:
+        return [pair("quantity", "not measured")]
     lines = [
         pair("survey", found.survey.rounded() if found.survey else "not taken"),
         pair("scow", found.scow.rounded() if found.scow else "not taken"),

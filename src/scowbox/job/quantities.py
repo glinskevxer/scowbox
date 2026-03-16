@@ -139,6 +139,27 @@ def determine_reach(
     )
 
 
+def determined(
+    connection: sqlite3.Connection,
+    ident: str,
+    bulking: Bulking,
+    *,
+    deduction: float = 0.0,
+    tolerance: float = TOLERANCE,
+) -> Determination | None:
+    """The pay quantity for a reach, or nothing where it cannot be measured.
+
+    Four callers had written this try and except round ``determine_reach`` and
+    two of them caught only one of the two errors, so a reach with a survey
+    pair that would not pair took a report down instead of being reported as
+    unmeasured.
+    """
+    try:
+        return determine_reach(connection, ident, bulking, deduction=deduction, tolerance=tolerance)
+    except (MissingError, RuleError):
+        return None
+
+
 def by_group(
     connection: sqlite3.Connection,
     bulking: Bulking,
@@ -154,11 +175,10 @@ def by_group(
     """
     gathered: dict[str, Yards] = {}
     for reach in reaches.listed(connection):
-        try:
-            found = determine_reach(
-                connection, reach.ident, bulking, deduction=deduction, tolerance=tolerance
-            )
-        except (MissingError, RuleError):
+        found = determined(
+            connection, reach.ident, bulking, deduction=deduction, tolerance=tolerance
+        )
+        if found is None:
             continue
         gathered[reach.group] = gathered.get(reach.group, Yards.zero()) + found.quantity
     return gathered

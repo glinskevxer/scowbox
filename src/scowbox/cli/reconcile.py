@@ -8,8 +8,7 @@ import click
 
 from scowbox.boxmeasure.bulking import materials, typical
 from scowbox.cli.context import opened
-from scowbox.errors import MissingError, RuleError
-from scowbox.job.quantities import determine_reach
+from scowbox.job.quantities import determined
 from scowbox.measure.governing import Determination
 from scowbox.model.reconciliation import Accepted, Reconciliation
 from scowbox.store import reaches, reconciliations
@@ -43,11 +42,8 @@ def open_reaches(ctx: click.Context, material: str) -> None:
     found = []
     with opened(ctx) as connection:
         for reach in reaches.listed(connection):
-            try:
-                held = determine_reach(connection, reach.ident, typical(material))
-            except (MissingError, RuleError):
-                continue
-            if held.reconcile:
+            held = determined(connection, reach.ident, typical(material))
+            if held is not None and held.reconcile:
                 found.append(held)
     if not found:
         click.echo("nothing outstanding")

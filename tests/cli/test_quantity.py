@@ -7,51 +7,19 @@ from pathlib import Path
 import pytest
 
 from tests.cli.runner import Book, a_book
+from tests.cli.surveying import a_reach, survey_the_reach
 
 
 @pytest.fixture
 def run(tmp_path: Path) -> Book:
     made = a_book(tmp_path)
-    made(
-        "reach", "add", "RCH-012", "Lower Range",
-        "--begin", "100+00", "--end", "103+00",
-        "--bottom", "600", "--depth", "42", "--slope", "0",
-        "--advance", "2", "--overdepth", "2",
-    )  # fmt: skip
+    a_reach(made)
     return made
-
-
-def load_tide(run: Book, tmp_path: Path, day: str) -> None:
-    where = tmp_path / f"gauge-{day}.csv"
-    where.write_text(
-        f"Date Time,Water Level,Quality\n{day} 06:54,2.000,v\n{day} 07:06,2.000,v\n",
-        encoding="utf-8",
-    )
-    run("tide", "load", "8658120", str(where))
-
-
-def load_survey(run: Book, tmp_path: Path, ident: str, kind: str, day: str, depth: float) -> None:
-    run(
-        "survey", "add", ident, "RCH-012",
-        "--kind", kind, "--on", day,
-        "--vessel", "Cape Fear", "--draft", "2.0", "--gauge", "8658120",
-    )  # fmt: skip
-    where = tmp_path / f"shots-{ident}.csv"
-    rows = [
-        f"{station},{offset},{depth},07:00"
-        for station in ("100+00", "101+00", "102+00", "103+00")
-        for offset in (-300, 0, 300)
-    ]
-    where.write_text("station,offset,depth,time\n" + "\n".join(rows) + "\n", encoding="utf-8")
-    run("survey", "load", ident, str(where))
 
 
 @pytest.fixture
 def measured(run: Book, tmp_path: Path) -> Book:
-    load_tide(run, tmp_path, "2025-07-01")
-    load_tide(run, tmp_path, "2025-08-01")
-    load_survey(run, tmp_path, "SV-0031", "before", "2025-07-01", 38.0)
-    load_survey(run, tmp_path, "SV-0032", "after", "2025-08-01", 42.0)
+    survey_the_reach(run, tmp_path)
     return run
 
 

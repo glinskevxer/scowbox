@@ -10,8 +10,7 @@ from __future__ import annotations
 import sqlite3
 
 from scowbox.boxmeasure.bulking import Bulking
-from scowbox.errors import MissingError, RuleError
-from scowbox.job.quantities import determine_reach
+from scowbox.job.quantities import determined
 from scowbox.job.rates import average_load, daily, for_reach
 from scowbox.measure.production import best, worst
 from scowbox.report.lines import blank, heading, pair, table
@@ -68,9 +67,8 @@ def _reaches(connection: sqlite3.Connection, bulking: Bulking, only: str | None)
     wanted = [r for r in reaches.listed(connection) if only is None or r.ident == only]
     lines = []
     for reach in wanted:
-        try:
-            found = determine_reach(connection, reach.ident, bulking)
-        except (MissingError, RuleError):
+        found = determined(connection, reach.ident, bulking)
+        if found is None:
             lines.append(pair(reach.ident, "not measured"))
             continue
         rate = for_reach(connection, reach.ident, found.quantity)
