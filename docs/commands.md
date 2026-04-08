@@ -369,6 +369,15 @@ Shifts in the book, oldest first.
 
 - `--reach` — Only shifts on this reach.
 
+## `scowbox shift load`
+
+Load a tender's shift log, with its interruptions.
+
+Arguments: `shifts_file`
+
+- `--stops` — The interruption file that goes with it.
+- `--show-refused` — Print every line that would not read.
+
 ## `scowbox shift log`
 
 Log a shift.

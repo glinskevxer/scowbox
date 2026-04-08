@@ -7,6 +7,13 @@ import datetime as dt
 import click
 
 from scowbox.cli.context import opened
+from scowbox.errors import ScowboxError
+from scowbox.feed.shiftlog import (
+    kept_shifts,
+    kept_stops,
+    parse_files,
+    refused,
+)
 from scowbox.model.plant import Dredge, Plant
 from scowbox.model.shift import Downtime, Reason, Shift
 from scowbox.pay.timeloss import credited_days, standby_days, tally
@@ -155,3 +162,47 @@ def shift_time(ctx: click.Context, first: dt.datetime, last: dt.datetime, share:
     for day in credited:
         click.echo(f"    {day}")
     click.echo(f"standby days {standby_days(found):,.2f}")
+
+
+@shift.command("load")
+@click.argument("shifts_file", metavar="SHIFTS", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--stops",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="The interruption file that goes with it.",
+)
+@click.option("--show-refused", is_flag=True, help="Print every line that would not read.")
+@click.pass_context
+def load_log(ctx: click.Context, shifts_file: str, stops: str | None, show_refused: bool) -> None:
+    """Load a tender's shift log, with its interruptions."""
+    worked, stopped = parse_files(shifts_file, stops)
+    written = 0
+    already: list[str] = []
+    with opened(ctx) as connection:
+        for record in kept_shifts(worked):
+            try:
+                shifts.add(connection, record)
+            except ScowboxError as trouble:
+                already.append(f"{record.ident}: {trouble}")
+                continue
+            written += 1
+        added = 0
+        for ident, interruption in kept_stops(stopped):
+            try:
+                shifts.stop(connection, ident, interruption)
+            except ScowboxError as trouble:
+                already.append(f"{ident}: {trouble}")
+                continue
+            added += 1
+    click.echo(f"{written:,} shifts loaded, {added:,} interruptions")
+    bad = [*refused(worked), *refused(stopped)]
+    if bad:
+        click.echo(f"{len(bad):,} lines would not read")
+    if already:
+        click.echo(f"{len(already):,} rows the book refused")
+    if show_refused:
+        for reading in bad:
+            click.echo(f"  line {reading.line}: {reading.trouble}")
+        for line in already:
+            click.echo(f"  {line}")

@@ -112,3 +112,63 @@ def test_a_stricter_share_credits_nothing(run: Book) -> None:
     run("shift", "stop", "SH-00021", "--from", "06:00", "--to", "13:00", "--reason", "weather")
     out = run("shift", "time", "--from", "2025-06-01", "--to", "2025-06-30", "--share", "0.9")
     assert "days earned  0" in out
+
+
+SHIFT_HEAD = "shift,dredge,reach,day,from,to"
+STOP_HEAD = "shift,from,to,reason,note"
+
+
+def a_log(tmp_path: Path, *rows: str) -> str:
+    where = tmp_path / "shifts.csv"
+    where.write_text(SHIFT_HEAD + "\n" + "\n".join(rows) + "\n", encoding="utf-8")
+    return str(where)
+
+
+def a_stop_file(tmp_path: Path, *rows: str) -> str:
+    where = tmp_path / "stops.csv"
+    where.write_text(STOP_HEAD + "\n" + "\n".join(rows) + "\n", encoding="utf-8")
+    return str(where)
+
+
+def test_a_log_loads_its_shifts(run: Book, tmp_path: Path) -> None:
+    log = a_log(tmp_path, "SH-00030,DR-003,RCH-012,2026-03-19,06:00,18:00")
+    out = run("shift", "load", log)
+    assert "1 shifts loaded, 0 interruptions" in out
+    assert "SH-00030" in run("shift", "list")
+
+
+def test_the_interruptions_load_with_it(run: Book, tmp_path: Path) -> None:
+    log = a_log(tmp_path, "SH-00030,DR-003,RCH-012,2026-03-19,06:00,18:00")
+    stops = a_stop_file(tmp_path, "SH-00030,09:00,11:00,weather,squall")
+    out = run("shift", "load", log, "--stops", stops)
+    assert "1 shifts loaded, 1 interruptions" in out
+    assert "10.0 effective" in run("shift", "list")
+
+
+def test_a_line_that_will_not_read_is_counted(run: Book, tmp_path: Path) -> None:
+    log = a_log(
+        tmp_path,
+        "SH-00030,DR-003,RCH-012,2026-03-19,06:00,18:00",
+        "SH-30,DR-003,RCH-012,2026-03-19,06:00,18:00",
+    )
+    out = run("shift", "load", log)
+    assert "1 lines would not read" in out
+
+
+def test_a_row_the_book_refuses_is_counted(run: Book, tmp_path: Path) -> None:
+    log = a_log(tmp_path, "SH-00021,DR-003,RCH-012,2026-03-19,06:00,18:00")
+    out = run("shift", "load", log)
+    assert "1 rows the book refused" in out
+
+
+def test_the_refused_rows_can_be_listed(run: Book, tmp_path: Path) -> None:
+    log = a_log(tmp_path, "SH-30,DR-003,RCH-012,2026-03-19,06:00,18:00")
+    out = run("shift", "load", log, "--show-refused")
+    assert "line 2:" in out
+
+
+def test_a_log_for_a_dredge_that_is_not_there_is_refused(run: Book, tmp_path: Path) -> None:
+    log = a_log(tmp_path, "SH-00030,DR-009,RCH-012,2026-03-19,06:00,18:00")
+    out = run("shift", "load", log)
+    assert "0 shifts loaded" in out
+    assert "1 rows the book refused" in out
