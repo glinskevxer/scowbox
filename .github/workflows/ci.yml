@@ -37,6 +37,7 @@ jobs:
       - run: python -m scowbox.tools.check_help
       - run: python -m scowbox.tools.check_exports
       - run: python -m scowbox.tools.check_fixtures
+      - run: python -m scowbox.tools.check_messages
       - run: python -m scowbox.tools.check_naming
       - run: python -m scowbox.tools.check_pins
       - run: python -m scowbox.tools.check_workflow
