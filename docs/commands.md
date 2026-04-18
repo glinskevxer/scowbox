@@ -284,6 +284,14 @@ Everything the book holds about one day.
 
 - `--on` — The day to report on.
 
+## `scowbox report estimate`
+
+One estimate against the one before it, or the whole history.
+
+Arguments: `ident`
+
+- `--item` — Follow one line item instead.
+
 ## `scowbox report export`
 
 Write the book out as comma separated files.

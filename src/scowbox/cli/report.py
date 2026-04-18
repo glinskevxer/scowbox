@@ -10,6 +10,7 @@ from scowbox.boxmeasure.bulking import materials, typical
 from scowbox.cli.context import opened
 from scowbox.report import audit as audit_report
 from scowbox.report import day as day_report
+from scowbox.report import estimate as estimate_report
 from scowbox.report import export as export_sheets
 from scowbox.report import gauges as gauge_report
 from scowbox.report import production as production_report
@@ -181,5 +182,22 @@ def sections(ctx: click.Context, ident: str, interval: float) -> None:
     """The end areas and slice volumes behind a reach's survey quantity."""
     with opened(ctx) as connection:
         lines = section_report.render(connection, ident, interval=interval)
+    for line in lines:
+        click.echo(line)
+
+
+@report.command("estimate")
+@click.argument("ident", required=False, default=None)
+@click.option("--item", default=None, help="Follow one line item instead.")
+@click.pass_context
+def estimate(ctx: click.Context, ident: str | None, item: str | None) -> None:
+    """One estimate against the one before it, or the whole history."""
+    with opened(ctx) as connection:
+        if item is not None:
+            lines = estimate_report.item_history(connection, item)
+        elif ident is None:
+            lines = estimate_report.history(connection)
+        else:
+            lines = estimate_report.render(connection, ident)
     for line in lines:
         click.echo(line)
