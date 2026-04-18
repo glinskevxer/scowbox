@@ -302,6 +302,13 @@ Arguments: `where`
 
 What the gauges cover and which surveys they leave stranded.
 
+## `scowbox report overdepth`
+
+Every yard dug below the pay prism, by reach and by station.
+
+- `--watch` — Share of removed material above which a reach is called out.
+- `--material` — Material class, which sets the bulking factor.
+
 ## `scowbox report production`
 
 Yards moved against the hours it took to move them.

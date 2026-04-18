@@ -13,6 +13,7 @@ from scowbox.report import day as day_report
 from scowbox.report import estimate as estimate_report
 from scowbox.report import export as export_sheets
 from scowbox.report import gauges as gauge_report
+from scowbox.report import overdepth as overdepth_report
 from scowbox.report import production as production_report
 from scowbox.report import reach as reach_report
 from scowbox.report import season as season_report
@@ -199,5 +200,29 @@ def estimate(ctx: click.Context, ident: str | None, item: str | None) -> None:
             lines = estimate_report.history(connection)
         else:
             lines = estimate_report.render(connection, ident)
+    for line in lines:
+        click.echo(line)
+
+
+@report.command("overdepth")
+@click.option(
+    "--watch",
+    type=float,
+    default=0.15,
+    show_default=True,
+    help="Share of removed material above which a reach is called out.",
+)
+@click.option(
+    "--material",
+    type=click.Choice(materials()),
+    default="silt",
+    show_default=True,
+    help="Material class, which sets the bulking factor.",
+)
+@click.pass_context
+def overdepth(ctx: click.Context, watch: float, material: str) -> None:
+    """Every yard dug below the pay prism, by reach and by station."""
+    with opened(ctx) as connection:
+        lines = overdepth_report.render(connection, typical(material), watch=watch)
     for line in lines:
         click.echo(line)
