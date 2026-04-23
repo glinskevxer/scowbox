@@ -8,7 +8,8 @@ import click
 
 from scowbox.boxmeasure.box import measure
 from scowbox.cli.context import opened
-from scowbox.errors import MissingError
+from scowbox.errors import MissingError, ScowboxError
+from scowbox.feed.trips import kept, parse_file, refused
 from scowbox.model.placement import Grade, PlacementTicket
 from scowbox.model.scow import BoxReading, Corner, Scow, ScowTrip
 from scowbox.store import scows, trips
@@ -214,3 +215,34 @@ def show_trip(ctx: click.Context, ident: str) -> None:
         click.echo("  ticket     none")
     else:
         click.echo(f"  ticket     {ticket.area} at {ticket.released:%Y-%m-%d %H:%M}")
+
+
+@trip.command("load")
+@click.argument("sheet", type=click.Path(exists=True, dir_okay=False))
+@click.option("--show-refused", is_flag=True, help="Print every row that would not read.")
+@click.pass_context
+def load_trips(ctx: click.Context, sheet: str, show_refused: bool) -> None:
+    """Load an inspector's trip sheet, box measures and all."""
+    reads = parse_file(sheet)
+    written = 0
+    already: list[str] = []
+    with opened(ctx) as connection:
+        for record in kept(reads):
+            try:
+                trips.add(connection, record)
+            except ScowboxError as trouble:
+                already.append(f"{record.ident}: {trouble}")
+                continue
+            written += 1
+    measured = sum(1 for record in kept(reads) if record.measured)
+    click.echo(f"{written:,} trips loaded, {measured:,} carrying a box measure")
+    bad = refused(reads)
+    if bad:
+        click.echo(f"{len(bad):,} rows would not read")
+    if already:
+        click.echo(f"{len(already):,} rows the book refused")
+    if show_refused:
+        for reading in bad:
+            click.echo(f"  line {reading.line}: {reading.trouble}")
+        for line in already:
+            click.echo(f"  {line}")

@@ -537,6 +537,14 @@ Trips in the book, oldest first.
 
 - `--reach` — Only trips out of this reach.
 
+## `scowbox trip load`
+
+Load an inspector's trip sheet, box measures and all.
+
+Arguments: `sheet`
+
+- `--show-refused` — Print every row that would not read.
+
 ## `scowbox trip measure`
 
 Take a box measure on a trip.

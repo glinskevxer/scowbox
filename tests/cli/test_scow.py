@@ -132,3 +132,37 @@ def test_show_reports_an_unmeasured_trip_as_one(loaded: Book) -> None:
 def test_a_reach_filter_narrows_the_trip_list(loaded: Book) -> None:
     assert "TR-04188" in loaded("trip", "list", "--reach", "RCH-012")
     assert "no trips" in loaded("trip", "list", "--reach", "RCH-999")
+
+
+TRIP_HEAD = "trip,scow,reach,day,placement,light,pb,sb,ps,ss"
+
+
+def a_sheet(tmp_path: Path, *rows: str) -> str:
+    where = tmp_path / "trips.csv"
+    where.write_text(TRIP_HEAD + "\n" + "\n".join(rows) + "\n", encoding="utf-8")
+    return str(where)
+
+
+def test_a_sheet_loads_its_trips(loaded: Book, tmp_path: Path) -> None:
+    sheet = a_sheet(
+        tmp_path,
+        "TR-04190,SC-004,RCH-012,2025-06-04,PA-002,12.0,4.0,4.0,4.0,4.0",
+        "TR-04192,SC-004,RCH-012,2025-06-04,PA-002,,,,,",
+    )
+    out = loaded("trip", "load", sheet)
+    assert "2 trips loaded, 1 carrying a box measure" in out
+    assert "TR-04190" in loaded("trip", "list")
+
+
+def test_a_row_that_will_not_read_is_counted(loaded: Book, tmp_path: Path) -> None:
+    sheet = a_sheet(tmp_path, "TR-90,SC-004,RCH-012,2025-06-04,PA-002,,,,,")
+    out = loaded("trip", "load", sheet, "--show-refused")
+    assert "1 rows would not read" in out
+    assert "line 2:" in out
+
+
+def test_a_trip_already_in_the_book_is_refused(loaded: Book, tmp_path: Path) -> None:
+    sheet = a_sheet(tmp_path, "TR-04188,SC-004,RCH-012,2025-06-04,PA-002,,,,,")
+    out = loaded("trip", "load", sheet)
+    assert "0 trips loaded" in out
+    assert "1 rows the book refused" in out
