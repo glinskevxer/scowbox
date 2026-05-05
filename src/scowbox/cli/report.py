@@ -12,6 +12,7 @@ from scowbox.report import audit as audit_report
 from scowbox.report import day as day_report
 from scowbox.report import estimate as estimate_report
 from scowbox.report import export as export_sheets
+from scowbox.report import fleet as fleet_report
 from scowbox.report import gauges as gauge_report
 from scowbox.report import overdepth as overdepth_report
 from scowbox.report import production as production_report
@@ -224,5 +225,15 @@ def overdepth(ctx: click.Context, watch: float, material: str) -> None:
     """Every yard dug below the pay prism, by reach and by station."""
     with opened(ctx) as connection:
         lines = overdepth_report.render(connection, typical(material), watch=watch)
+    for line in lines:
+        click.echo(line)
+
+
+@report.command("fleet")
+@click.pass_context
+def fleet(ctx: click.Context) -> None:
+    """What plant is on the job and what it has done."""
+    with opened(ctx) as connection:
+        lines = fleet_report.render(connection)
     for line in lines:
         click.echo(line)

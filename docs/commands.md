@@ -298,6 +298,10 @@ Write the book out as comma separated files.
 
 Arguments: `where`
 
+## `scowbox report fleet`
+
+What plant is on the job and what it has done.
+
 ## `scowbox report gauges`
 
 What the gauges cover and which surveys they leave stranded.
