@@ -5,7 +5,14 @@ from __future__ import annotations
 import click
 from click.testing import CliRunner
 
-from scowbox.cli.options import TEMPLATE_OPTIONS, template_of, template_options
+from scowbox.cli.options import (
+    DEDUCTION,
+    MATERIAL,
+    TEMPLATE_OPTIONS,
+    bulking_of,
+    template_of,
+    template_options,
+)
 from scowbox.units.depth import Depth
 
 
@@ -34,3 +41,36 @@ def test_every_template_option_is_hung_exactly_once() -> None:
     names = [p.name for p in sample.params]
     assert names == ["bottom", "depth", "slope", "advance", "overdepth"]
     assert len(names) == len(TEMPLATE_OPTIONS)
+
+
+def test_the_material_option_hangs_on_a_command() -> None:
+    @click.command()
+    @MATERIAL
+    def sample(material: str) -> None:
+        click.echo(material)
+
+    assert CliRunner().invoke(sample, []).output.strip() == "silt"
+    assert CliRunner().invoke(sample, ["--material", "clay"]).output.strip() == "clay"
+
+
+def test_the_material_option_refuses_a_material_nobody_has_a_factor_for() -> None:
+    @click.command()
+    @MATERIAL
+    def sample(material: str) -> None:
+        click.echo(material)
+
+    assert CliRunner().invoke(sample, ["--material", "shell hash"]).exit_code != 0
+
+
+def test_the_deduction_option_defaults_to_nothing() -> None:
+    @click.command()
+    @DEDUCTION
+    def sample(deduction: float) -> None:
+        click.echo(str(deduction))
+
+    assert CliRunner().invoke(sample, []).output.strip() == "0.0"
+
+
+def test_a_material_name_stands_for_its_factor() -> None:
+    assert bulking_of("silt").factor == 1.20
+    assert bulking_of("clay").factor > bulking_of("sand").factor

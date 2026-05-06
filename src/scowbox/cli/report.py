@@ -6,8 +6,8 @@ import datetime as dt
 
 import click
 
-from scowbox.boxmeasure.bulking import materials, typical
 from scowbox.cli.context import opened
+from scowbox.cli.options import DEDUCTION, MATERIAL, bulking_of
 from scowbox.report import audit as audit_report
 from scowbox.report import day as day_report
 from scowbox.report import estimate as estimate_report
@@ -27,6 +27,12 @@ def report() -> None:
     """Reports off the book."""
 
 
+def _show(lines: list[str]) -> None:
+    """Put a rendered report on the terminal. Eleven commands did this by hand."""
+    for line in lines:
+        click.echo(line)
+
+
 @report.command("day")
 @click.option(
     "--on",
@@ -40,57 +46,30 @@ def day(ctx: click.Context, when: dt.datetime) -> None:
     """Everything the book holds about one day."""
     with opened(ctx) as connection:
         lines = day_report.render(connection, when.date())
-    for line in lines:
-        click.echo(line)
+    _show(lines)
 
 
 @report.command("reach")
 @click.argument("ident")
-@click.option(
-    "--material",
-    type=click.Choice(materials()),
-    default="silt",
-    show_default=True,
-    help="Material class, which sets the bulking factor.",
-)
-@click.option(
-    "--deduction",
-    type=float,
-    default=0.0,
-    show_default=True,
-    help="Share of a scow quantity that falls outside the prism.",
-)
+@MATERIAL
+@DEDUCTION
 @click.pass_context
 def reach(ctx: click.Context, ident: str, material: str, deduction: float) -> None:
     """One reach, its records and its quantity."""
     with opened(ctx) as connection:
-        lines = reach_report.render(connection, ident, typical(material), deduction=deduction)
-    for line in lines:
-        click.echo(line)
+        lines = reach_report.render(connection, ident, bulking_of(material), deduction=deduction)
+    _show(lines)
 
 
 @report.command("season")
-@click.option(
-    "--material",
-    type=click.Choice(materials()),
-    default="silt",
-    show_default=True,
-    help="Material class, which sets the bulking factor.",
-)
-@click.option(
-    "--deduction",
-    type=float,
-    default=0.0,
-    show_default=True,
-    help="Share of a scow quantity that falls outside the prism.",
-)
+@MATERIAL
+@DEDUCTION
 @click.pass_context
 def season(ctx: click.Context, material: str, deduction: float) -> None:
     """Where the job stands today."""
     with opened(ctx) as connection:
-        lines = season_report.render(connection, typical(material), deduction=deduction)
-    for line in lines:
-        click.echo(line)
+        lines = season_report.render(connection, bulking_of(material), deduction=deduction)
+    _show(lines)
 
 
 @report.command("audit")
@@ -105,8 +84,7 @@ def audit(ctx: click.Context, closed_through: dt.datetime | None) -> None:
     """Every place the records and the permits disagree."""
     with opened(ctx) as connection:
         lines = audit_report.render(connection, closed_through.date() if closed_through else None)
-    for line in lines:
-        click.echo(line)
+    _show(lines)
 
 
 @report.command("export")
@@ -122,20 +100,13 @@ def export(ctx: click.Context, where: str) -> None:
 
 @report.command("production")
 @click.option("--reach", default=None, help="Only this reach.")
-@click.option(
-    "--material",
-    type=click.Choice(materials()),
-    default="silt",
-    show_default=True,
-    help="Material class, which sets the bulking factor.",
-)
+@MATERIAL
 @click.pass_context
 def production(ctx: click.Context, reach: str | None, material: str) -> None:
     """Yards moved against the hours it took to move them."""
     with opened(ctx) as connection:
-        lines = production_report.render(connection, typical(material), reach=reach)
-    for line in lines:
-        click.echo(line)
+        lines = production_report.render(connection, bulking_of(material), reach=reach)
+    _show(lines)
 
 
 @report.command("shoaling")
@@ -156,8 +127,7 @@ def shoaling(ctx: click.Context, min_days: int, reach: str | None) -> None:
             if reach
             else shoaling_report.render(connection, min_days=min_days)
         )
-    for line in lines:
-        click.echo(line)
+    _show(lines)
 
 
 @report.command("gauges")
@@ -166,8 +136,7 @@ def gauges(ctx: click.Context) -> None:
     """What the gauges cover and which surveys they leave stranded."""
     with opened(ctx) as connection:
         lines = gauge_report.render(connection)
-    for line in lines:
-        click.echo(line)
+    _show(lines)
 
 
 @report.command("sections")
@@ -184,8 +153,7 @@ def sections(ctx: click.Context, ident: str, interval: float) -> None:
     """The end areas and slice volumes behind a reach's survey quantity."""
     with opened(ctx) as connection:
         lines = section_report.render(connection, ident, interval=interval)
-    for line in lines:
-        click.echo(line)
+    _show(lines)
 
 
 @report.command("estimate")
@@ -201,8 +169,7 @@ def estimate(ctx: click.Context, ident: str | None, item: str | None) -> None:
             lines = estimate_report.history(connection)
         else:
             lines = estimate_report.render(connection, ident)
-    for line in lines:
-        click.echo(line)
+    _show(lines)
 
 
 @report.command("overdepth")
@@ -213,20 +180,13 @@ def estimate(ctx: click.Context, ident: str | None, item: str | None) -> None:
     show_default=True,
     help="Share of removed material above which a reach is called out.",
 )
-@click.option(
-    "--material",
-    type=click.Choice(materials()),
-    default="silt",
-    show_default=True,
-    help="Material class, which sets the bulking factor.",
-)
+@MATERIAL
 @click.pass_context
 def overdepth(ctx: click.Context, watch: float, material: str) -> None:
     """Every yard dug below the pay prism, by reach and by station."""
     with opened(ctx) as connection:
-        lines = overdepth_report.render(connection, typical(material), watch=watch)
-    for line in lines:
-        click.echo(line)
+        lines = overdepth_report.render(connection, bulking_of(material), watch=watch)
+    _show(lines)
 
 
 @report.command("fleet")
@@ -235,5 +195,4 @@ def fleet(ctx: click.Context) -> None:
     """What plant is on the job and what it has done."""
     with opened(ctx) as connection:
         lines = fleet_report.render(connection)
-    for line in lines:
-        click.echo(line)
+    _show(lines)

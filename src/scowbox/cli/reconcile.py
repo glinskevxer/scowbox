@@ -6,8 +6,8 @@ import datetime as dt
 
 import click
 
-from scowbox.boxmeasure.bulking import materials, typical
 from scowbox.cli.context import opened
+from scowbox.cli.options import MATERIAL, bulking_of
 from scowbox.job.quantities import determined
 from scowbox.measure.governing import Determination
 from scowbox.model.reconciliation import Accepted, Reconciliation
@@ -29,20 +29,14 @@ def _line(held: Determination) -> str:
 
 
 @reconcile.command("open")
-@click.option(
-    "--material",
-    type=click.Choice(materials()),
-    default="silt",
-    show_default=True,
-    help="Material class, which sets the bulking factor.",
-)
+@MATERIAL
 @click.pass_context
 def open_reaches(ctx: click.Context, material: str) -> None:
     """Reaches whose two measurements disagree and are not settled."""
     found = []
     with opened(ctx) as connection:
         for reach in reaches.listed(connection):
-            held = determined(connection, reach.ident, typical(material))
+            held = determined(connection, reach.ident, bulking_of(material))
             if held is not None and held.reconcile:
                 found.append(held)
     if not found:

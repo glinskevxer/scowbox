@@ -6,8 +6,8 @@ import datetime as dt
 
 import click
 
-from scowbox.boxmeasure.bulking import materials, typical
 from scowbox.cli.context import opened
+from scowbox.cli.options import DEDUCTION, MATERIAL, bulking_of
 from scowbox.job.estimating import draft, write
 from scowbox.pay.estimate import Estimate
 from scowbox.store import contracts, estimates
@@ -42,20 +42,8 @@ def _print(found: Estimate) -> None:
     required=True,
     help="Last day the estimate covers.",
 )
-@click.option(
-    "--material",
-    type=click.Choice(materials()),
-    default="silt",
-    show_default=True,
-    help="Material class, which sets the bulking factor.",
-)
-@click.option(
-    "--deduction",
-    type=float,
-    default=0.0,
-    show_default=True,
-    help="Share of a scow quantity that falls outside the prism.",
-)
+@MATERIAL
+@DEDUCTION
 @click.option("--claim", multiple=True, help="A lump sum item and share, as LI-0009=1.0")
 @click.option("--final", is_flag=True, help="Close the contract and release retainage.")
 @click.pass_context
@@ -73,7 +61,7 @@ def draft_estimate(
         drafted = draft(
             connection,
             through.date(),
-            typical(material),
+            bulking_of(material),
             deduction=deduction,
             lump_sums=lumps,
             final=final,
@@ -92,20 +80,8 @@ def draft_estimate(
     required=True,
     help="Last day the estimate covers.",
 )
-@click.option(
-    "--material",
-    type=click.Choice(materials()),
-    default="silt",
-    show_default=True,
-    help="Material class, which sets the bulking factor.",
-)
-@click.option(
-    "--deduction",
-    type=float,
-    default=0.0,
-    show_default=True,
-    help="Share of a scow quantity that falls outside the prism.",
-)
+@MATERIAL
+@DEDUCTION
 @click.option("--claim", multiple=True, help="A lump sum item and share, as LI-0009=1.0")
 @click.option("--final", is_flag=True, help="Close the contract and release retainage.")
 @click.pass_context
@@ -123,7 +99,7 @@ def write_estimate(
         drafted = draft(
             connection,
             through.date(),
-            typical(material),
+            bulking_of(material),
             deduction=deduction,
             lump_sums=lumps,
             final=final,

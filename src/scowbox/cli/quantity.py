@@ -4,24 +4,9 @@ from __future__ import annotations
 
 import click
 
-from scowbox.boxmeasure.bulking import materials, typical
 from scowbox.cli.context import opened
+from scowbox.cli.options import DEDUCTION, MATERIAL, bulking_of
 from scowbox.job.quantities import by_group, determine_reach, unmeasured
-
-MATERIAL = click.option(
-    "--material",
-    type=click.Choice(materials()),
-    default="silt",
-    show_default=True,
-    help="Material class, which sets the bulking factor.",
-)
-DEDUCTION = click.option(
-    "--deduction",
-    type=float,
-    default=0.0,
-    show_default=True,
-    help="Share of a scow quantity that falls outside the prism.",
-)
 
 
 @click.group()
@@ -49,7 +34,7 @@ def reach_quantity(
         found = determine_reach(
             connection,
             ident,
-            typical(material),
+            bulking_of(material),
             deduction=deduction,
             tolerance=tolerance,
         )
@@ -73,7 +58,7 @@ def reach_quantity(
 def group_quantities(ctx: click.Context, material: str, deduction: float) -> None:
     """Pay quantities gathered into the groups the bid schedule bills by."""
     with opened(ctx) as connection:
-        gathered = by_group(connection, typical(material), deduction=deduction)
+        gathered = by_group(connection, bulking_of(material), deduction=deduction)
     if not gathered:
         click.echo("nothing measured yet")
         return
@@ -87,7 +72,7 @@ def group_quantities(ctx: click.Context, material: str, deduction: float) -> Non
 def quantity_gaps(ctx: click.Context, material: str) -> None:
     """Reaches the book cannot measure yet, and why."""
     with opened(ctx) as connection:
-        missing = unmeasured(connection, typical(material))
+        missing = unmeasured(connection, bulking_of(material))
     if not missing:
         click.echo("every reach is measured")
         return

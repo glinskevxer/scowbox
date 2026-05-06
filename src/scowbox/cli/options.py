@@ -14,6 +14,7 @@ from typing import Any, TypeVar
 
 import click
 
+from scowbox.boxmeasure.bulking import Bulking, materials, typical
 from scowbox.model.channel import Template
 from scowbox.units.depth import Depth
 
@@ -46,3 +47,28 @@ def template_of(
         advance_maintenance=advance,
         overdepth=overdepth,
     )
+
+
+MATERIAL = click.option(
+    "--material",
+    type=click.Choice(materials()),
+    default="silt",
+    show_default=True,
+    help="Material class, which sets the bulking factor.",
+)
+"""Written out five times before this, and two of the five had drifted onto a
+different default, so the same book answered two different quantities depending
+on which command you asked."""
+
+DEDUCTION = click.option(
+    "--deduction",
+    type=float,
+    default=0.0,
+    show_default=True,
+    help="Share of a scow quantity that falls outside the prism.",
+)
+
+
+def bulking_of(material: str) -> Bulking:
+    """The factor a material name stands for."""
+    return typical(material)
