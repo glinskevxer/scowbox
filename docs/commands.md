@@ -278,6 +278,13 @@ Every place the records and the permits disagree.
 
 - `--closed-through` — Day the month closed, after which a missing ticket is a violation.
 
+## `scowbox report closeout`
+
+Everything standing between the job and a final estimate.
+
+- `--material` — Material class, which sets the bulking factor.
+- `--closed-through` — Day the month closed, after which a missing ticket is a violation.
+
 ## `scowbox report day`
 
 Everything the book holds about one day.

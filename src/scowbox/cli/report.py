@@ -9,6 +9,7 @@ import click
 from scowbox.cli.context import opened
 from scowbox.cli.options import DEDUCTION, MATERIAL, bulking_of
 from scowbox.report import audit as audit_report
+from scowbox.report import closeout as closeout_report
 from scowbox.report import day as day_report
 from scowbox.report import estimate as estimate_report
 from scowbox.report import export as export_sheets
@@ -195,4 +196,24 @@ def fleet(ctx: click.Context) -> None:
     """What plant is on the job and what it has done."""
     with opened(ctx) as connection:
         lines = fleet_report.render(connection)
+    _show(lines)
+
+
+@report.command("closeout")
+@MATERIAL
+@click.option(
+    "--closed-through",
+    type=click.DateTime(["%Y-%m-%d"]),
+    default=None,
+    help="Day the month closed, after which a missing ticket is a violation.",
+)
+@click.pass_context
+def closeout(ctx: click.Context, material: str, closed_through: dt.datetime | None) -> None:
+    """Everything standing between the job and a final estimate."""
+    with opened(ctx) as connection:
+        lines = closeout_report.render(
+            connection,
+            bulking_of(material),
+            closed_through=closed_through.date() if closed_through else None,
+        )
     _show(lines)

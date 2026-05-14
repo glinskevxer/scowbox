@@ -11,23 +11,8 @@ import datetime as dt
 import sqlite3
 
 from scowbox.compliance.findings import Severity, counted
-from scowbox.compliance.sweep import Sweep, sweep
+from scowbox.job.sweeping import gather
 from scowbox.report.lines import blank, heading, indent, pair
-from scowbox.store import placements, shifts, trips, windows
-
-
-def gather(connection: sqlite3.Connection, closed_through: dt.date | None = None) -> Sweep:
-    """Run the sweep over everything in the book."""
-    areas = {area.ident: area for area in placements.listed(connection)}
-    tickets = [ticket for area in areas for ticket in trips.tickets_for_area(connection, area)]
-    return sweep(
-        shifts.listed(connection),
-        trips.listed(connection),
-        tickets,
-        areas,
-        windows.schedule(connection),
-        closed_through=closed_through,
-    )
 
 
 def render(connection: sqlite3.Connection, closed_through: dt.date | None = None) -> list[str]:
