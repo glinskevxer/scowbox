@@ -309,6 +309,15 @@ MIGRATIONS: tuple[Migration, ...] = (
         "final estimate",
         ("ALTER TABLE estimate ADD COLUMN final INTEGER NOT NULL DEFAULT 0",),
     ),
+    Migration(
+        13,
+        "foreign key indexes",
+        (
+            "CREATE INDEX shift_by_dredge ON shift (dredge, began)",
+            "CREATE INDEX trip_by_scow ON trip (scow, loaded_on)",
+            "CREATE INDEX trip_by_placement ON trip (placement, loaded_on)",
+        ),
+    ),
 )
 
 

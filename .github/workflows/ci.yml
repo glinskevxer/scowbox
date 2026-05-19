@@ -27,6 +27,7 @@ jobs:
       - run: python -m scowbox.tools.check_design
       - run: python -m scowbox.tools.check_docstrings
       - run: python -m scowbox.tools.release_check
+      - run: python -m scowbox.tools.check_indexes
       - run: python -m scowbox.tools.check_layers
       - run: python -m scowbox.tools.check_clock
       - run: python -m scowbox.tools.check_printing
