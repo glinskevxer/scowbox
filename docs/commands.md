@@ -245,6 +245,14 @@ Take a reconciliation back out, which puts the reach back in dispute.
 
 Arguments: `reach`
 
+## `scowbox reconcile explain`
+
+What would have to move for a reach to agree with itself.
+
+Arguments: `reach`
+
+- `--material` — Material class, which sets the bulking factor.
+
 ## `scowbox reconcile list`
 
 Every reconciliation in the book.

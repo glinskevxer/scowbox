@@ -161,3 +161,14 @@ def test_the_settled_quantity_is_what_the_report_shows(disputed: Book) -> None:
 
 def test_a_stiffer_material_can_close_the_gap(disputed: Book) -> None:
     assert "RCH-012" in disputed("reconcile", "open", "--material", "sand")
+
+
+def test_a_disputed_reach_explains_what_would_have_to_move(disputed: Book) -> None:
+    out = disputed("reconcile", "explain", "RCH-012")
+    assert "RCH-012: survey" in out
+    assert "would admit this pair" in out
+    assert "would match" in out
+
+
+def test_a_reach_that_cannot_be_measured_cannot_be_explained(run: Book) -> None:
+    run("reconcile", "explain", "RCH-012", ok=False)

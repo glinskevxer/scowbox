@@ -10,6 +10,7 @@ from scowbox.cli.context import opened
 from scowbox.cli.options import MATERIAL, bulking_of
 from scowbox.job.quantities import determined
 from scowbox.measure.governing import Determination
+from scowbox.measure.tolerance import sensitivity
 from scowbox.model.reconciliation import Accepted, Reconciliation
 from scowbox.store import reaches, reconciliations
 from scowbox.units.volume import Yards
@@ -110,3 +111,30 @@ def drop(ctx: click.Context, reach: str) -> None:
     with opened(ctx) as connection:
         reconciliations.remove(connection, reach)
     click.echo(f"{reach} is back in dispute")
+
+
+@reconcile.command("explain")
+@click.argument("reach")
+@MATERIAL
+@click.pass_context
+def explain(ctx: click.Context, reach: str, material: str) -> None:
+    """What would have to move for a reach to agree with itself."""
+    with opened(ctx) as connection:
+        held = determined(connection, reach, bulking_of(material))
+        if held is None:
+            raise click.ClickException(f"{reach} cannot be measured yet")
+        found = sensitivity(held, bulking_of(material))
+    click.echo(found.describe())
+    click.echo(f"  difference   {found.difference.rounded()}")
+    click.echo(f"  tolerance    {found.spread:.1%} would admit this pair")
+    factor = found.factor
+    if factor is None:
+        click.echo("  bulking      nothing to solve for, one side measured nothing")
+    else:
+        credible = "inside" if found.credible else "outside"
+        click.echo(f"  bulking      {factor:.3f} would match, {credible} the usual range")
+    deduction = found.deduction
+    if deduction is None:
+        click.echo("  deduction    cannot close this gap, the scows are already the lesser")
+    else:
+        click.echo(f"  deduction    {deduction:.1%} would bring the scows to the survey")
