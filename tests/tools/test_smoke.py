@@ -34,8 +34,17 @@ def test_the_two_measurements_land_inside_the_tolerance(lines: dict[str, str]) -
 
 def test_the_estimate_earns_the_quantity_and_the_lump_sum(lines: dict[str, str]) -> None:
     assert lines["earned"].startswith("$1,")
-    assert lines["retained"].startswith("$")
     assert lines["due"].startswith("$")
+
+
+def test_the_final_estimate_releases_the_retainage(lines: dict[str, str]) -> None:
+    assert lines["released"].startswith("$")
+    assert lines["released"] != "$0.00"
+
+
+def test_the_sweep_covers_the_whole_job(lines: dict[str, str]) -> None:
+    assert lines["swept"].endswith("tickets")
+    assert "14 trips" in lines["swept"]
 
 
 def test_it_prints_when_it_is_not_quiet(capsys: pytest.CaptureFixture[str]) -> None:

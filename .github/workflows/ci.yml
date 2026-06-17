@@ -202,4 +202,30 @@ jobs:
           scowbox --book "$book" estimate write --through 2025-04-30 --claim LI-0009=1.0
           scowbox --book "$book" estimate list
           scowbox --book "$book" estimate show EST-001
+          scowbox --book "$book" book verify
+          scowbox --book "$book" book counts
+          scowbox --book "$book" book compact
+          scowbox --book "$book" find RCH-012
+          scowbox --book "$book" find TR-00001
+          scowbox --book "$book" find 8658120
+          scowbox --book "$book" survey check SV-0031 --share 0.6
+          scowbox --book "$book" modification add P00003 --on 2025-06-01 \
+            --change "contract time" --description "Sturgeon window" --days 45
+          scowbox --book "$book" modification list
+          scowbox --book "$book" modification current
+          scowbox --book "$book" reconcile open
+          scowbox --book "$book" reconcile explain RCH-012
+          scowbox --book "$book" reconcile list
+          scowbox --book "$book" placement forecast PA-002 --through 2025-04-30
+          scowbox --book "$book" report sections RCH-012
+          scowbox --book "$book" report production
+          scowbox --book "$book" report fleet
+          scowbox --book "$book" report gauges
+          scowbox --book "$book" report shoaling
+          scowbox --book "$book" report overdepth
+          scowbox --book "$book" report closeout
+          scowbox --book "$book" report estimate
+          scowbox --book "$book" report estimate EST-001
+          scowbox --book "$book" report estimate --item LI-0001
+          scowbox --book "$book" report export /tmp/walk-csv
           scowbox --book "$book" counts

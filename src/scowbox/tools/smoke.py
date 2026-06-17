@@ -23,6 +23,8 @@ from scowbox.datum.tide import TideReading
 from scowbox.job.estimating import draft
 from scowbox.job.estimating import write as write_estimate
 from scowbox.job.quantities import determine_reach
+from scowbox.job.season import closeout
+from scowbox.job.sweeping import gather
 from scowbox.model.channel import Method, Reach, Template
 from scowbox.model.contract import Contract, LineItem, Unit
 from scowbox.model.placement import Grade, Ground, PlacementArea, PlacementTicket
@@ -202,13 +204,22 @@ def run(quiet: bool = False) -> list[str]:
         assert found.scow is not None, "the scow side produced nothing"
         assert found.spread is not None, "a reach measured both ways has a spread"
         assert found.quantity.hundredths > 0, "the job billed nothing"
-        drafted = draft(connection, THROUGH, typical("silt"), lump_sums={"LI-0009": 1.0})
-        assert drafted.complete, f"a reach was left unmeasured: {drafted.left_out}"
+        drafted = draft(
+            connection, THROUGH, typical("silt"), lump_sums={"LI-0009": 1.0}, final=True
+        )
+        assert drafted.closeable, f"the job would not close: {drafted.left_out}"
         assert drafted.days_earned == 1, "the rained off day was not credited"
         estimate = write_estimate(connection, drafted)
+        assert estimate.final, "the final estimate was not marked final"
+        assert estimate.retained.cents == 0, "the retainage was not released"
         assert estimate.due == estimate.payable, "the first estimate owes everything"
         assert estimate.earned.cents > 0, "the estimate earned nothing"
         assert not trips.untick(connection), "a trip left without a ticket"
+        swept = gather(connection, THROUGH)
+        assert swept.clean, f"the sweep found {len(swept.findings)} things"
+        standing = closeout(connection, typical("silt"), closed_through=THROUGH)
+        assert standing.outstanding == 0, f"{standing.outstanding} things outstanding"
+        assert standing.closed, "the final estimate was not written"
         lines = [
             f"survey    {found.survey.rounded()}",
             f"scow      {found.scow.rounded()}",
@@ -216,8 +227,9 @@ def run(quiet: bool = False) -> list[str]:
             f"governs   {found.governs.value}",
             f"quantity  {found.quantity.rounded()}",
             f"earned    {estimate.earned}",
-            f"retained  {estimate.retained}",
+            f"released  {estimate.released}",
             f"due       {estimate.due}",
+            f"swept     {swept.shifts} shifts, {swept.trips} trips, {swept.tickets} tickets",
         ]
     if not quiet:
         for line in lines:
