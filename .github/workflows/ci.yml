@@ -32,6 +32,7 @@ jobs:
       - run: python -m scowbox.tools.check_clock
       - run: python -m scowbox.tools.check_printing
       - run: python -m scowbox.tools.check_readme
+      - run: python -m scowbox.tools.check_size
       - run: python -m scowbox.tools.check_sql
       - run: python -m scowbox.tools.check_suppressions
       - run: python -m scowbox.tools.check_migrations
