@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from tests.cli.runner import Book, a_book
+from tests.cli.surveying import a_reach, survey_the_reach
 
 
 @pytest.fixture
@@ -104,3 +105,105 @@ def test_a_closed_month_turns_the_warning_into_a_violation(run: Book) -> None:
 def test_the_reach_report_takes_a_material_and_a_deduction(run: Book) -> None:
     out = run("report", "reach", "RCH-012", "--material", "sand", "--deduction", "0.15")
     assert "Reach RCH-012" in out
+
+
+@pytest.fixture
+def surveyed(tmp_path: Path) -> Book:
+    """A book with one reach measured by a pair of surveys."""
+    made = a_book(tmp_path, "surveyed.sqlite3")
+    a_reach(made)
+    survey_the_reach(made, tmp_path)
+    return made
+
+
+def test_the_section_sheet_prints_the_arithmetic(surveyed: Book) -> None:
+    out = surveyed("report", "sections", "RCH-012")
+    assert "Sections, RCH-012" in out
+    assert "cy removed" in out
+
+
+def test_the_section_sheet_takes_an_interval(surveyed: Book) -> None:
+    out = surveyed("report", "sections", "RCH-012", "--interval", "200")
+    assert "sections      3 of 3" in out
+
+
+def test_the_section_sheet_on_a_reach_with_no_surveys_fails(run: Book) -> None:
+    run("report", "sections", "RCH-012", ok=False)
+
+
+def test_the_production_report_prints(run: Book) -> None:
+    out = run("report", "production")
+    assert "Production" in out
+    assert "average load" in out
+
+
+def test_the_production_report_narrows_to_a_reach(run: Book) -> None:
+    assert "Production, RCH-012" in run("report", "production", "--reach", "RCH-012")
+
+
+def test_the_fleet_report_prints(run: Book) -> None:
+    out = run("report", "fleet")
+    assert "Fleet" in out
+    assert "DR-003" in out
+
+
+def test_the_gauge_report_prints(surveyed: Book) -> None:
+    out = surveyed("report", "gauges")
+    assert "Gauges" in out
+    assert "8658120" in out
+
+
+def test_the_shoaling_report_prints(run: Book) -> None:
+    out = run("report", "shoaling")
+    assert "Shoaling" in out
+    assert "at least 30 days" in out
+
+
+def test_the_shoaling_report_lists_a_reach_s_intervals(surveyed: Book) -> None:
+    out = surveyed("report", "shoaling", "--reach", "RCH-012")
+    assert "SV-0031 to SV-0032" in out
+    assert "31 days" in out
+
+
+def test_the_overdepth_report_prints(surveyed: Book) -> None:
+    out = surveyed("report", "overdepth")
+    assert "Overdepth" in out
+    assert "watch above" in out
+
+
+def test_the_overdepth_report_takes_a_watch(surveyed: Book) -> None:
+    assert "50%" in surveyed("report", "overdepth", "--watch", "0.5")
+
+
+def test_the_closeout_report_prints(surveyed: Book) -> None:
+    out = surveyed("report", "closeout")
+    assert "Closeout" in out
+    assert "outstanding" in out
+
+
+def test_the_closeout_report_takes_a_closing_day(surveyed: Book) -> None:
+    out = surveyed("report", "closeout", "--closed-through", "2025-08-31")
+    assert "Closeout" in out
+
+
+def test_the_estimate_history_prints(surveyed: Book) -> None:
+    surveyed(
+        "contract", "add", "W912PM-25-C-0014",
+        "--awarded", "2025-01-20", "--ntp", "2025-02-03",
+        "--days", "730", "--liquidated", "$3,400.00",
+    )  # fmt: skip
+    surveyed(
+        "contract", "item", "LI-0001", "Dredging, base",
+        "--unit", "cy", "--price", "$7.35", "--group", "base",
+    )  # fmt: skip
+    assert "No estimate written yet." in surveyed("report", "estimate")
+    surveyed("estimate", "write", "--through", "2025-08-31")
+    assert "EST-001" in surveyed("report", "estimate")
+    assert "Estimate 1" in surveyed("report", "estimate", "EST-001")
+    assert "Line item LI-0001" in surveyed("report", "estimate", "--item", "LI-0001")
+
+
+def test_the_export_writes_its_files(run: Book, tmp_path: Path) -> None:
+    out = run("report", "export", str(tmp_path / "sheets"))
+    assert "reaches.csv" in out
+    assert (tmp_path / "sheets" / "estimates.csv").exists()
