@@ -34,7 +34,8 @@ def test_the_three_copies_agree() -> None:
 
 def test_the_changelog_entries_come_newest_first() -> None:
     found = entries()
-    assert found[0] == "1.0.0"
+    assert found == sorted(found, reverse=True)
+    assert found[0] == __version__
     assert "0.1.0" in found
 
 

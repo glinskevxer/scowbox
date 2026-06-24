@@ -24,6 +24,12 @@ Vacuum the book and report what it gave back.
 
 How many rows the book holds, table by table.
 
+## `scowbox book laws`
+
+The standing rules this program holds a book to.
+
+- `--where` — Print the module each rule lives in.
+
 ## `scowbox book verify`
 
 Ask sqlite and the schema whether anything is wrong.

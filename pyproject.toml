@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scowbox"
-version = "1.0.0"
+version = "1.1.0"
 description = "Maintenance dredging measurement and payment: surveys, scow box measure, pay quantities"
 requires-python = ">=3.12"
 dependencies = ["click==8.1.8"]

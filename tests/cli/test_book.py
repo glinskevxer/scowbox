@@ -68,3 +68,15 @@ def test_compacting_a_book_with_room_in_it_recovers_bytes(run: Book) -> None:
     for number in range(200):
         run("reach", "remove", f"RCH-{number + 20:03d}")
     assert "bytes recovered" in run("book", "compact")
+
+
+def test_the_laws_print_one_a_line(run: Book) -> None:
+    out = run("book", "laws")
+    assert "depths" in out
+    assert "positive downward" in out
+    assert "scowbox." not in out
+
+
+def test_the_laws_can_name_where_they_live(run: Book) -> None:
+    out = run("book", "laws", "--where")
+    assert "scowbox.units.depth" in out

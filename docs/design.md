@@ -53,6 +53,13 @@ that, `scowbox.tools.check_layers` enforces the import order,
 context manager commits its transaction and stays open, which is a leak that
 Python 3.12 says nothing about and 3.13 turns into a failure somewhere else.
 
+## The rules are written down
+
+`scowbox.laws` gathers the standing rules in one place, each with the module
+that enforces it, and `scowbox book laws` prints them. Nothing reads it to make
+a decision; it exists so that a reader who has arrived at a quantity they did
+not expect has the list in front of them.
+
 ## Orchestration is a layer
 
 `scowbox.job.quantities` reads records out, hands them to the rules and hands

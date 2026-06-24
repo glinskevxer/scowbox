@@ -19,7 +19,7 @@ from scowbox.tools.scan import Module, modules, report
 NAME = "check_layers"
 
 LAYERS: tuple[tuple[str, ...], ...] = (
-    ("errors", "ids"),
+    ("errors", "ids", "laws"),
     ("units",),
     ("model",),
     ("datum", "section", "boxmeasure", "windows"),

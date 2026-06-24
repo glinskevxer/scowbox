@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.1.0
+
+A season's worth of the things a project engineer asked for after using 1.0.0
+on a real job.
+
+- Signed contract modifications, and estimates computed against the modified
+  contract rather than the awarded one.
+- The final estimate, which releases retainage and refuses to be built while
+  anything is unmeasured or unticketed.
+- Reconciliation on the command line, with an explanation of what would have to
+  move for a reach to agree with itself.
+- Survey quality: repeatability against the survey's own repeat shots, and
+  coverage against the reach's template.
+- Shoaling rates, taken only over an interval nobody dredged in.
+- Reports: sections, production, fleet, gauges, overdepth, closeout and the
+  estimate history.
+- Importers for the tender's shift log and the inspector's trip sheet.
+- Book care: verify, counts, backup and compact.
+- `find`, which says what an identifier names.
+- Seven more checks the build runs on itself, and an index behind every foreign
+  key.
+
 ## 1.0.0
 
 The first version anybody is asked to bill against.
