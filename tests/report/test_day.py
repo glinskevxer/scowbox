@@ -154,6 +154,60 @@ def test_working_inside_a_closure_is_reported(open_book: sqlite3.Connection) -> 
     assert "loggerhead" in out
 
 
+def test_a_suspect_box_measure_says_what_is_wrong_with_it(
+    open_book: sqlite3.Connection,
+) -> None:
+    wedge = (
+        BoxReading(Corner.PORT_BOW, 12.0, 1.0),
+        BoxReading(Corner.STARBOARD_BOW, 12.0, 1.0),
+        BoxReading(Corner.PORT_STERN, 12.0, 7.0),
+        BoxReading(Corner.STARBOARD_STERN, 12.0, 7.0),
+    )
+    trips.add(open_book, ScowTrip("TR-04188", "SC-004", "RCH-012", DAY, "PA-002", wedge))
+    out = text(open_book)
+    assert "trim +6.00 ft" in out
+
+
+def test_a_day_that_placed_nothing_says_so(open_book: sqlite3.Connection) -> None:
+    assert "Nothing placed on this day." in text(open_book)
+
+
+def test_a_book_with_no_placement_area_says_so(tmp_path: Path) -> None:
+    with book(tmp_path / "bare.sqlite3", create=True) as connection:
+        assert "No placement area in this book." in "\n".join(render(connection, DAY))
+
+
+def test_the_day_s_loads_are_summed_against_the_area(
+    open_book: sqlite3.Connection,
+) -> None:
+    a_trip(open_book)
+    trips.release(
+        open_book,
+        PlacementTicket(
+            "TR-04188", "PA-002", moment(DAY, "11:20"), Yards.of_yards(1800), Grade.SUITABLE
+        ),
+    )
+    out = text(open_book)
+    assert "PA-002        1 loads today, 1,800.00 cy placed, open" in out
+
+
+def test_a_load_placed_on_another_day_is_not_counted(
+    open_book: sqlite3.Connection,
+) -> None:
+    a_trip(open_book)
+    trips.release(
+        open_book,
+        PlacementTicket(
+            "TR-04188",
+            "PA-002",
+            moment(dt.date(2025, 8, 7), "11:20"),
+            Yards.of_yards(1800),
+            Grade.SUITABLE,
+        ),
+    )
+    assert "Nothing placed on this day." in text(open_book)
+
+
 def test_another_day_does_not_appear(open_book: sqlite3.Connection) -> None:
     a_shift(open_book)
     a_trip(open_book)

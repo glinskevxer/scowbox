@@ -16,6 +16,7 @@ from scowbox.boxmeasure.box import measure
 from scowbox.compliance.findings import Severity, counted
 from scowbox.compliance.sweep import sweep
 from scowbox.errors import MissingError
+from scowbox.measure.placing import standing
 from scowbox.model.scow import ScowTrip
 from scowbox.model.shift import Shift
 from scowbox.pay.timeloss import tally
@@ -23,7 +24,7 @@ from scowbox.report.lines import blank, heading, indent, pair, table
 from scowbox.store import placements, scows, shifts, trips, windows
 
 SHIFT_WIDTHS = (10, 9, 9, 8, 10, 10)
-TRIP_WIDTHS = (10, 8, 10, 12, 12, 14)
+TRIP_WIDTHS = (10, 8, 10, 12, 22, 12)
 
 
 def render(connection: sqlite3.Connection, day: dt.date) -> list[str]:
@@ -36,8 +37,32 @@ def render(connection: sqlite3.Connection, day: dt.date) -> list[str]:
     lines.append(blank())
     lines.extend(_trips(connection, loads))
     lines.append(blank())
+    lines.extend(_placed(connection, day))
+    lines.append(blank())
     lines.extend(_findings(connection, day, worked, loads))
     return lines
+
+
+def _placed(connection: sqlite3.Connection, day: dt.date) -> list[str]:
+    """Where the day's loads went, and what each area holds now.
+
+    Against the whole record rather than the day, because the number somebody
+    wants off this line is how much room is left in the cell, not how much went
+    into it this morning.
+    """
+    areas = placements.listed(connection)
+    if not areas:
+        return ["No placement area in this book."]
+    lines = []
+    for area in areas:
+        held = trips.tickets_for_area(connection, area.ident)
+        today = [t for t in held if t.released.date() == day]
+        if not today:
+            continue
+        total = standing(area, held)
+        room = "open" if total.remaining is None else f"{total.remaining} left"
+        lines.append(pair(area.ident, f"{len(today):,} loads today, {total.placed} placed, {room}"))
+    return lines or ["Nothing placed on this day."]
 
 
 def _shifts(worked: Sequence[Shift]) -> list[str]:
@@ -71,7 +96,7 @@ def _trips(connection: sqlite3.Connection, loads: Sequence[ScowTrip]) -> list[st
         if trip.measured:
             got = measure(scows.get(connection, trip.scow), trip)
             yards = got.scow_yards.rounded()
-            state = "suspect" if not got.sound else "measured"
+            state = ", ".join(got.suspect) if not got.sound else "measured"
         else:
             yards = "-"
             state = "unmeasured"
