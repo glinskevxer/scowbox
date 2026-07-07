@@ -10,14 +10,12 @@ from pathlib import Path
 import pytest
 
 from scowbox.boxmeasure.bulking import Bulking
-from scowbox.model.channel import Method, Reach, Template
-from scowbox.model.placement import Ground, PlacementArea
-from scowbox.model.scow import Scow, ScowTrip
 from scowbox.report.closeout import render
-from scowbox.store import placements, reaches, scows, trips
+from scowbox.store import placements, reaches, scows
 from scowbox.store.book import book
-from scowbox.units.depth import Depth
-from scowbox.units.station import Reachline
+from tests.report.bookmaking import a_reach as make_reach
+from tests.report.bookmaking import a_scow as make_scow
+from tests.report.bookmaking import a_trip, an_area
 
 DAY = dt.date(2026, 5, 6)
 SILT = Bulking("silt", 1.20)
@@ -30,17 +28,7 @@ def open_book(tmp_path: Path) -> Iterator[sqlite3.Connection]:
 
 
 def a_reach(connection: sqlite3.Connection) -> None:
-    reaches.add(
-        connection,
-        Reach(
-            ident="RCH-012",
-            name="Lower Range",
-            line=Reachline.parse("100+00", "140+00"),
-            template=Template(bottom_width=400, authorized_depth=Depth.of_feet(42), side_slope=3),
-            method=Method.SCOW,
-            group="base",
-        ),
-    )
+    reaches.add(connection, make_reach())
 
 
 def text(connection: sqlite3.Connection) -> str:
@@ -76,12 +64,9 @@ def test_the_verdict_counts_what_is_in_the_way(open_book: sqlite3.Connection) ->
 
 def test_a_trip_with_no_ticket_is_listed(open_book: sqlite3.Connection) -> None:
     a_reach(open_book)
-    scows.add(open_book, Scow("SC-004", "Dixie 41", 180, 42, 14))
-    placements.add(
-        open_book,
-        PlacementArea("PA-002", "Wilmington ODMDS", Ground.OCEAN, "SAW-2019-01142"),
-    )
-    trips.add(open_book, ScowTrip("TR-04188", "SC-004", "RCH-012", DAY, "PA-002"))
+    scows.add(open_book, make_scow())
+    placements.add(open_book, an_area())
+    a_trip(open_book, "TR-04188", DAY, loaded=None)
     out = text(open_book)
     assert "Trips with no placement ticket: 1" in out
     assert "TR-04188" in out

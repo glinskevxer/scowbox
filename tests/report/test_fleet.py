@@ -9,17 +9,15 @@ from pathlib import Path
 
 import pytest
 
-from scowbox.model.channel import Method, Reach, Template
-from scowbox.model.placement import Ground, PlacementArea
-from scowbox.model.plant import Dredge, Plant
-from scowbox.model.scow import BoxReading, Corner, Scow, ScowTrip
+from scowbox.model.scow import BoxReading, Corner, ScowTrip
 from scowbox.model.shift import Downtime, Reason, Shift
 from scowbox.report.fleet import render
 from scowbox.store import placements, reaches, scows, shifts, trips
 from scowbox.store.book import book
 from scowbox.units.clock import moment
-from scowbox.units.depth import Depth
-from scowbox.units.station import Reachline
+from tests.report.bookmaking import a_dredge as make_dredge
+from tests.report.bookmaking import a_reach, an_area
+from tests.report.bookmaking import a_scow as make_scow
 
 DAY = dt.date(2026, 4, 22)
 
@@ -27,34 +25,17 @@ DAY = dt.date(2026, 4, 22)
 @pytest.fixture
 def open_book(tmp_path: Path) -> Iterator[sqlite3.Connection]:
     with book(tmp_path / "book.sqlite3", create=True) as connection:
-        reaches.add(
-            connection,
-            Reach(
-                ident="RCH-012",
-                name="Lower Range",
-                line=Reachline.parse("100+00", "140+00"),
-                template=Template(
-                    bottom_width=400, authorized_depth=Depth.of_feet(42), side_slope=3
-                ),
-                method=Method.SCOW,
-                group="base",
-            ),
-        )
-        placements.add(
-            connection,
-            PlacementArea("PA-002", "Wilmington ODMDS", Ground.OCEAN, "SAW-2019-01142"),
-        )
+        reaches.add(connection, a_reach())
+        placements.add(connection, an_area())
         yield connection
 
 
 def a_dredge(connection: sqlite3.Connection) -> None:
-    shifts.add_dredge(
-        connection, Dredge("DR-003", "Cherokee", Plant.MECHANICAL, "Norfolk Dredging")
-    )
+    shifts.add_dredge(connection, make_dredge())
 
 
 def a_scow(connection: sqlite3.Connection) -> None:
-    scows.add(connection, Scow("SC-004", "Dixie 41", 180, 42, 14))
+    scows.add(connection, make_scow())
 
 
 def text(connection: sqlite3.Connection) -> str:
