@@ -15,9 +15,25 @@ import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from scowbox.errors import DuplicateError, MissingError
+from scowbox.errors import DuplicateError, MissingError, StateError
 
 FOREIGN_KEY = "FOREIGN KEY"
+
+
+@contextmanager
+def removing(kind: str, ident: str) -> Iterator[None]:
+    """Run a delete, saying what is still pointing at the row.
+
+    Deleting a scow with trips against it came back as a bare sqlite
+    IntegrityError with a traceback, which reads as a broken program rather
+    than as the refusal it is.
+    """
+    try:
+        yield
+    except sqlite3.IntegrityError:
+        raise StateError(
+            f"{kind} {ident} still has records against it and cannot be taken out"
+        ) from None
 
 
 @contextmanager

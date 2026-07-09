@@ -235,3 +235,13 @@ def test_a_sheet_names_the_file_it_writes(open_book: sqlite3.Connection) -> None
 def test_a_sheet_carries_a_row_for_every_record(open_book: sqlite3.Connection) -> None:
     assert len(reach_sheet(open_book).rows) == 1
     assert len(trip_sheet(open_book).rows) == 2
+
+
+def test_a_box_measured_from_the_wrong_reference_still_exports(
+    open_book: sqlite3.Connection, tmp_path: Path
+) -> None:
+    deep = tuple(BoxReading(c, 16.0, 4.0) for c in Corner)
+    trips.add(open_book, ScowTrip("TR-04194", "SC-004", "RCH-012", DAY, "PA-002", deep))
+    write(open_book, tmp_path / "out")
+    rows = {row["trip"]: row for row in read(tmp_path / "out", "trips")}
+    assert rows["TR-04194"]["scow_yards"] == ""

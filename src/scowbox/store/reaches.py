@@ -7,7 +7,7 @@ import sqlite3
 from scowbox.errors import MissingError
 from scowbox.model.channel import Method, Reach, Template
 from scowbox.store.sqlite import rows, written
-from scowbox.store.writing import inserting
+from scowbox.store.writing import inserting, removing
 from scowbox.units.depth import Depth
 from scowbox.units.station import Reachline, Station
 
@@ -93,5 +93,5 @@ def overlapping(connection: sqlite3.Connection, line: Reachline) -> tuple[Reach,
 def remove(connection: sqlite3.Connection, ident: str) -> None:
     """Take a reach out of the book."""
     get(connection, ident)
-    with written(connection):
+    with written(connection), removing("reach", ident):
         connection.execute("DELETE FROM reach WHERE ident = ?", (ident,))

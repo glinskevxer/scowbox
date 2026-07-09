@@ -135,7 +135,18 @@ def show_estimate(ctx: click.Context, ident: str) -> None:
 
 
 def _claim(text: str) -> tuple[str, float]:
+    """Read a claim written as ``LI-0009=1.0``.
+
+    The share was passed straight to ``float`` before this, so a typo in it came
+    back as a ValueError traceback rather than as a usage message.
+    """
     item, _, share = text.partition("=")
     if not share:
         raise click.BadParameter(f"{text!r} is not an item and a share, such as LI-0009=1.0")
-    return item.strip(), float(share)
+    try:
+        claimed = float(share)
+    except ValueError:
+        raise click.BadParameter(f"{share!r} is not a share, such as 1.0") from None
+    if not 0 <= claimed <= 1:
+        raise click.BadParameter(f"{claimed:g} is not a share between nothing and all of it")
+    return item.strip(), claimed

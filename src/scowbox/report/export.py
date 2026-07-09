@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from scowbox.boxmeasure.box import measure
-from scowbox.errors import MissingError
+from scowbox.errors import MissingError, RuleError
 from scowbox.store import contracts, estimates, reaches, scows, shifts, surveys, trips
 
 Row = Sequence[object]
@@ -105,9 +105,13 @@ def trip_sheet(connection: sqlite3.Connection) -> Sheet:
         yards = ""
         mean = ""
         if trip.measured and trip.scow in fleet:
-            got = measure(fleet[trip.scow], trip)
-            yards = f"{got.scow_yards.yards:.2f}"
-            mean = f"{got.mean_material:.2f}"
+            try:
+                got = measure(fleet[trip.scow], trip)
+            except RuleError:
+                got = None
+            if got is not None:
+                yards = f"{got.scow_yards.yards:.2f}"
+                mean = f"{got.mean_material:.2f}"
         try:
             ticket = trips.ticket_of(connection, trip.ident)
             area, released, grade = (

@@ -12,7 +12,7 @@ import sqlite3
 from scowbox.errors import MissingError
 from scowbox.model.placement import Ground, PlacementArea
 from scowbox.store.sqlite import rows, written
-from scowbox.store.writing import inserting
+from scowbox.store.writing import inserting, removing
 from scowbox.units.volume import Yards
 
 COLUMNS = "ident, name, ground, permit, capacity"
@@ -71,5 +71,5 @@ def of_ground(connection: sqlite3.Connection, ground: Ground) -> tuple[Placement
 def remove(connection: sqlite3.Connection, ident: str) -> None:
     """Take a placement area out of the book."""
     get(connection, ident)
-    with written(connection):
+    with written(connection), removing("placement area", ident):
         connection.execute("DELETE FROM placement_area WHERE ident = ?", (ident,))

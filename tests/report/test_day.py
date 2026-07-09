@@ -9,13 +9,14 @@ from pathlib import Path
 
 import pytest
 
+from scowbox.errors import StateError
 from scowbox.model.channel import Method, Reach, Template
 from scowbox.model.placement import Grade, Ground, PlacementArea, PlacementTicket
 from scowbox.model.plant import Dredge, Plant
 from scowbox.model.scow import BoxReading, Corner, Scow, ScowTrip
 from scowbox.model.shift import Downtime, Reason, Shift
 from scowbox.model.window import Restriction, Window
-from scowbox.report.day import render
+from scowbox.report.day import _box, render
 from scowbox.store import placements, reaches, scows, shifts, trips, windows
 from scowbox.store.book import book
 from scowbox.units.clock import moment
@@ -206,6 +207,36 @@ def test_a_load_placed_on_another_day_is_not_counted(
         ),
     )
     assert "Nothing placed on this day." in text(open_book)
+
+
+def test_a_trip_in_a_scow_that_has_gone_does_not_take_the_page_down() -> None:
+    trip = ScowTrip(
+        "TR-04188",
+        "SC-004",
+        "RCH-012",
+        DAY,
+        "PA-002",
+        tuple(BoxReading(c, 12.0, 4.0) for c in Corner),
+    )
+    assert _box({}, trip) == ("-", "scow struck off")
+
+
+def test_a_scow_with_trips_against_it_cannot_be_struck_off(
+    open_book: sqlite3.Connection,
+) -> None:
+    a_trip(open_book)
+    with pytest.raises(StateError, match="still has records against it"):
+        scows.remove(open_book, "SC-004")
+
+
+def test_a_box_measured_from_the_wrong_reference_does_not_either(
+    open_book: sqlite3.Connection,
+) -> None:
+    deep = tuple(BoxReading(c, 16.0, 4.0) for c in Corner)
+    trips.add(open_book, ScowTrip("TR-04190", "SC-004", "RCH-012", DAY, "PA-002", deep))
+    out = text(open_book)
+    assert "TR-04190" in out
+    assert "box unusable" in out
 
 
 def test_another_day_does_not_appear(open_book: sqlite3.Connection) -> None:

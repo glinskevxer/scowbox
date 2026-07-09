@@ -10,14 +10,14 @@ from __future__ import annotations
 
 import datetime as dt
 import sqlite3
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from scowbox.boxmeasure.box import measure
 from scowbox.compliance.findings import Severity, counted
 from scowbox.compliance.sweep import sweep
-from scowbox.errors import MissingError
+from scowbox.errors import MissingError, RuleError
 from scowbox.measure.placing import standing
-from scowbox.model.scow import ScowTrip
+from scowbox.model.scow import Scow, ScowTrip
 from scowbox.model.shift import Shift
 from scowbox.pay.timeloss import tally
 from scowbox.report.lines import blank, heading, indent, pair, table
@@ -91,15 +91,10 @@ def _shifts(worked: Sequence[Shift]) -> list[str]:
 def _trips(connection: sqlite3.Connection, loads: Sequence[ScowTrip]) -> list[str]:
     if not loads:
         return ["No scow trip logged."]
+    fleet = {scow.ident: scow for scow in scows.listed(connection)}
     body = []
     for trip in loads:
-        if trip.measured:
-            got = measure(scows.get(connection, trip.scow), trip)
-            yards = got.scow_yards.rounded()
-            state = ", ".join(got.suspect) if not got.sound else "measured"
-        else:
-            yards = "-"
-            state = "unmeasured"
+        yards, state = _box(fleet, trip)
         try:
             ticket = trips.ticket_of(connection, trip.ident)
             where = ticket.area
@@ -107,6 +102,30 @@ def _trips(connection: sqlite3.Connection, loads: Sequence[ScowTrip]) -> list[st
             where = "no ticket"
         body.append((trip.ident, trip.scow, trip.reach, yards, state, where))
     return table(("trip", "scow", "reach", "scow yards", "box", "placed"), body, TRIP_WIDTHS)
+
+
+def _box(fleet: Mapping[str, Scow], trip: ScowTrip) -> tuple[str, str]:
+    """A trip's yards and the state of its box, however wrong the box is.
+
+    A day report that raised because one scow was struck off the fleet, or
+    because one crew measured down from the wrong reference, took the whole
+    day's work off the page with it. Neither is a reason not to print the other
+    eleven trips, so both come back as a state in the box column and the trip
+    keeps its row. What is wrong with the box in detail is a question for
+    ``scowbox trip show``.
+    """
+    if not trip.measured:
+        return "-", "unmeasured"
+    scow = fleet.get(trip.scow)
+    if scow is None:
+        return "-", "scow struck off"
+    try:
+        got = measure(scow, trip)
+    except RuleError:
+        return "-", "box unusable"
+    if got.sound:
+        return got.scow_yards.rounded(), "measured"
+    return got.scow_yards.rounded(), ", ".join(got.suspect)
 
 
 def _findings(

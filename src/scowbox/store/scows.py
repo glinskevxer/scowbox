@@ -7,7 +7,7 @@ import sqlite3
 from scowbox.errors import MissingError
 from scowbox.model.scow import Scow
 from scowbox.store.sqlite import rows, written
-from scowbox.store.writing import inserting
+from scowbox.store.writing import inserting, removing
 
 COLUMNS = "ident, name, inside_length, inside_width, inside_depth"
 
@@ -55,5 +55,5 @@ def listed(connection: sqlite3.Connection) -> tuple[Scow, ...]:
 def remove(connection: sqlite3.Connection, ident: str) -> None:
     """Take a scow out of the fleet."""
     get(connection, ident)
-    with written(connection):
+    with written(connection), removing("scow", ident):
         connection.execute("DELETE FROM scow WHERE ident = ?", (ident,))

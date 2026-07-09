@@ -99,3 +99,15 @@ def test_liquidated_damages_show_on_a_late_estimate(run: Book, tmp_path: Path) -
     out = run("estimate", "draft", "--through", "2026-02-13")
     assert "damages" in out
     assert "10 days" in out
+
+
+def test_a_share_that_is_not_a_number_is_a_usage_error(run: Book, tmp_path: Path) -> None:
+    survey_the_reach(run, tmp_path)
+    out = run("estimate", "draft", "--through", "2025-08-31", "--claim", "LI-0009=most", ok=False)
+    assert "not a share" in out
+
+
+def test_a_share_over_one_is_refused(run: Book, tmp_path: Path) -> None:
+    survey_the_reach(run, tmp_path)
+    out = run("estimate", "draft", "--through", "2025-08-31", "--claim", "LI-0009=1.5", ok=False)
+    assert "between nothing and all of it" in out

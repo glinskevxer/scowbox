@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import sqlite3
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
-from scowbox.errors import DuplicateError, MissingError
+from scowbox.errors import DuplicateError, MissingError, StateError
 from scowbox.model.placement import Ground, PlacementArea
 from scowbox.model.scow import Scow
 from scowbox.store import placements, scows
@@ -113,3 +114,35 @@ def test_a_removed_area_is_gone(open_book: sqlite3.Connection) -> None:
 def test_removing_an_area_that_is_not_there_says_so(open_book: sqlite3.Connection) -> None:
     with pytest.raises(MissingError):
         placements.remove(open_book, "PA-002")
+
+
+def test_an_area_with_tickets_against_it_cannot_be_removed(
+    open_book: sqlite3.Connection,
+) -> None:
+    from scowbox.model.channel import Method, Reach, Template
+    from scowbox.model.scow import ScowTrip
+    from scowbox.store import reaches, trips
+    from scowbox.units.depth import Depth
+    from scowbox.units.station import Reachline
+
+    placements.add(open_book, an_ocean())
+    scows.add(open_book, a_scow())
+    reaches.add(
+        open_book,
+        Reach(
+            ident="RCH-012",
+            name="Lower Range",
+            line=Reachline.parse("100+00", "140+00"),
+            template=Template(bottom_width=400, authorized_depth=Depth.of_feet(42), side_slope=3),
+            method=Method.SCOW,
+            group="base",
+        ),
+    )
+    trips.add(
+        open_book,
+        ScowTrip("TR-04188", "SC-004", "RCH-012", dt.date(2026, 7, 6), "PA-002"),
+    )
+    with pytest.raises(StateError):
+        placements.remove(open_book, "PA-002")
+    with pytest.raises(StateError):
+        reaches.remove(open_book, "RCH-012")
