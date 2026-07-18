@@ -76,3 +76,36 @@ def test_the_lock_lines_carry_the_version_and_the_name() -> None:
     first = lines()[0].split()
     assert first[0] == "1"
     assert first[2] == "channel"
+
+
+def test_writing_the_lock_puts_it_back(capsys: pytest.CaptureFixture[str]) -> None:
+    held = lock_path().read_text(encoding="utf-8")
+    assert main(["--write"]) == 0
+    assert "wrote" in capsys.readouterr().out
+    assert lock_path().read_text(encoding="utf-8") == held
+
+
+def test_a_tampered_lock_fails_the_check(capsys: pytest.CaptureFixture[str]) -> None:
+    where = lock_path()
+    held = where.read_text(encoding="utf-8")
+    try:
+        where.write_text(held.replace("channel", "chanel"), encoding="utf-8")
+        assert main([]) == 1
+        assert "has changed since it was locked" in capsys.readouterr().out
+    finally:
+        where.write_text(held, encoding="utf-8")
+
+
+def test_a_missing_lock_fails_the_check(capsys: pytest.CaptureFixture[str]) -> None:
+    where = lock_path()
+    held = where.read_text(encoding="utf-8")
+    try:
+        where.unlink()
+        assert main([]) == 1
+        assert "is missing" in capsys.readouterr().out
+    finally:
+        where.write_text(held, encoding="utf-8")
+
+
+def test_the_lock_is_read_off_disk_line_by_line() -> None:
+    assert held() == lines()

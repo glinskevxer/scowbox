@@ -43,3 +43,11 @@ def test_ordinary_code_is_not_matched() -> None:
 
 def test_the_marks_are_patterns_not_plain_strings() -> None:
     assert all(isinstance(mark, re.Pattern) for mark in MARKS)
+
+
+def test_a_mypy_file_level_suppression_is_matched() -> None:
+    assert matched("# mypy: ignore-errors")
+
+
+def test_every_mark_is_tried_against_a_line() -> None:
+    assert len(MARKS) == 4

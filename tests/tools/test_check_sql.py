@@ -115,3 +115,32 @@ def test_a_statement_spliced_together_is_still_checked(tmp_path: Path) -> None:
         'def go(c, ident):\n    c.execute("SELECT a FROM t" f" WHERE b = {ident}")\n',
     )
     assert "interpolates ident" in found[0]
+
+
+def test_a_statement_that_is_not_run_is_not_checked(tmp_path: Path) -> None:
+    found = a_module(tmp_path, 'def go(ident):\n    return f"SELECT a FROM {ident}"\n')
+    assert found == []
+
+
+def test_a_call_on_something_that_is_not_a_runner_is_skipped(tmp_path: Path) -> None:
+    found = a_module(tmp_path, 'def go(c, ident):\n    c.prepare(f"SELECT {ident}")\n')
+    assert found == []
+
+
+def test_a_bare_call_is_skipped(tmp_path: Path) -> None:
+    found = a_module(tmp_path, 'def go(ident):\n    execute(f"SELECT {ident}")\n')
+    assert found == []
+
+
+def test_a_statement_with_no_arguments_is_skipped(tmp_path: Path) -> None:
+    found = a_module(tmp_path, "def go(c):\n    c.execute()\n")
+    assert found == []
+
+
+def test_a_guard_reached_through_a_module_is_allowed(tmp_path: Path) -> None:
+    found = a_module(
+        tmp_path,
+        "from scowbox.store import sqlite\n\n\n"
+        'def go(c, name):\n    c.execute(f"SELECT count(*) FROM {sqlite.sql_identifier(name)}")\n',
+    )
+    assert found == []

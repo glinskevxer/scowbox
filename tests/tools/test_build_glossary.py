@@ -13,6 +13,7 @@ from scowbox.tools.build_glossary import (
     main,
     terms,
     vocabularies,
+    write,
 )
 
 
@@ -81,3 +82,19 @@ def test_a_missing_document_is_found() -> None:
         assert "is missing" in findings()[0]
     finally:
         where.write_text(held, encoding="utf-8")
+
+
+def test_writing_the_glossary_puts_it_back(capsys: pytest.CaptureFixture[str]) -> None:
+    held = document_path().read_text(encoding="utf-8")
+    assert main([]) == 0
+    assert "terms from scowbox" in capsys.readouterr().out
+    assert document_path().read_text(encoding="utf-8") == held
+
+
+def test_write_returns_where_it_wrote() -> None:
+    assert write() == document_path()
+
+
+def test_an_enum_with_no_docstring_still_gets_a_section() -> None:
+    text = "\n".join(glossary())
+    assert text.count("## ") == len(vocabularies())

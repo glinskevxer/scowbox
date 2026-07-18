@@ -53,3 +53,27 @@ def test_an_attribute_that_has_gone_does_not_resolve() -> None:
 def test_a_note_naming_something_that_has_gone_is_found() -> None:
     found = findings("The rules live in `scowbox.measure.invented`.")
     assert found == ["docs/design.md names scowbox.measure.invented, which is not there"]
+
+
+def test_a_missing_note_is_found() -> None:
+    where = document_path()
+    held = where.read_text(encoding="utf-8")
+    try:
+        where.unlink()
+        assert findings() == ["docs/design.md is missing"]
+    finally:
+        where.write_text(held, encoding="utf-8")
+
+
+def test_the_check_fails_when_the_note_is_wrong() -> None:
+    where = document_path()
+    held = where.read_text(encoding="utf-8")
+    try:
+        where.write_text("`scowbox.units.fathoms` holds the fathoms.\n", encoding="utf-8")
+        assert main() == 1
+    finally:
+        where.write_text(held, encoding="utf-8")
+
+
+def test_a_holder_that_does_not_import_does_not_resolve() -> None:
+    assert not resolves("scowbox.invented.thing.deeper")

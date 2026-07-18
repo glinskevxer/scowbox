@@ -61,3 +61,45 @@ def test_a_version_is_read_out_of_the_project_file() -> None:
 
 def test_the_entries_are_read_off_the_headings() -> None:
     assert entries("# Changelog\n\n## 2.0.0\n\n## 1.9.0\n") == ["2.0.0", "1.9.0"]
+
+
+def test_a_missing_changelog_is_found() -> None:
+    where = changelog_path()
+    held = where.read_text(encoding="utf-8")
+    try:
+        where.unlink()
+        found = findings()
+        assert any("CHANGELOG.md is missing" in line for line in found)
+    finally:
+        where.write_text(held, encoding="utf-8")
+
+
+def test_a_changelog_with_no_entries_is_found() -> None:
+    where = changelog_path()
+    held = where.read_text(encoding="utf-8")
+    try:
+        where.write_text("# Changelog\n\nnothing yet\n", encoding="utf-8")
+        assert any("no version entries" in line for line in findings())
+    finally:
+        where.write_text(held, encoding="utf-8")
+
+
+def test_the_same_version_twice_is_found() -> None:
+    where = changelog_path()
+    held = where.read_text(encoding="utf-8")
+    try:
+        where.write_text(f"# Changelog\n\n## {__version__}\n\n## {__version__}\n", encoding="utf-8")
+        assert any("the same version twice" in line for line in findings())
+    finally:
+        where.write_text(held, encoding="utf-8")
+
+
+def test_the_check_fails_when_something_is_wrong(capsys: pytest.CaptureFixture[str]) -> None:
+    where = changelog_path()
+    held = where.read_text(encoding="utf-8")
+    try:
+        where.write_text("# Changelog\n\n## 9.9.9\n", encoding="utf-8")
+        assert main() == 1
+        assert "release_check" in capsys.readouterr().out
+    finally:
+        where.write_text(held, encoding="utf-8")
