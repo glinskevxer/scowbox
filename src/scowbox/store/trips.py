@@ -97,30 +97,58 @@ def get(connection: sqlite3.Connection, ident: str) -> ScowTrip:
     )
 
 
+def _gather(connection: sqlite3.Connection, found: list[sqlite3.Row]) -> tuple[ScowTrip, ...]:
+    """Build a run of trips, fetching every box reading in one query.
+
+    This called ``get`` once a trip before, which was two queries a trip and
+    four hundred queries on a season report. Sqlite is quick, and four hundred
+    round trips inside a loop that is itself inside a loop is not.
+    """
+    readings: dict[str, list[BoxReading]] = {}
+    for row in rows(
+        connection,
+        "SELECT trip, corner, light, loaded FROM box_reading ORDER BY trip, corner",
+    ):
+        readings.setdefault(row["trip"], []).append(
+            BoxReading(Corner(row["corner"]), row["light"], row["loaded"])
+        )
+    built = []
+    for row in found:
+        trip = _read_trip(row)
+        mine = readings.get(trip.ident)
+        built.append(trip if not mine else trip.with_readings(tuple(mine)))
+    return tuple(built)
+
+
 def for_reach(connection: sqlite3.Connection, reach: str) -> tuple[ScowTrip, ...]:
     """Every trip out of one reach, oldest first."""
-    found = rows(
+    return _gather(
         connection,
-        f"SELECT {COLUMNS} FROM trip WHERE reach = ? ORDER BY loaded_on, ident",
-        (reach,),
+        rows(
+            connection,
+            f"SELECT {COLUMNS} FROM trip WHERE reach = ? ORDER BY loaded_on, ident",
+            (reach,),
+        ),
     )
-    return tuple(get(connection, row["ident"]) for row in found)
 
 
 def listed(connection: sqlite3.Connection) -> tuple[ScowTrip, ...]:
     """Every trip in the book, oldest first."""
-    found = rows(connection, f"SELECT {COLUMNS} FROM trip ORDER BY loaded_on, ident")
-    return tuple(get(connection, row["ident"]) for row in found)
+    return _gather(
+        connection, rows(connection, f"SELECT {COLUMNS} FROM trip ORDER BY loaded_on, ident")
+    )
 
 
 def between(connection: sqlite3.Connection, first: dt.date, last: dt.date) -> tuple[ScowTrip, ...]:
     """Every trip loaded in a period, both ends included."""
-    found = rows(
+    return _gather(
         connection,
-        f"SELECT {COLUMNS} FROM trip WHERE loaded_on BETWEEN ? AND ? ORDER BY loaded_on, ident",
-        (first.isoformat(), last.isoformat()),
+        rows(
+            connection,
+            f"SELECT {COLUMNS} FROM trip WHERE loaded_on BETWEEN ? AND ? ORDER BY loaded_on, ident",
+            (first.isoformat(), last.isoformat()),
+        ),
     )
-    return tuple(get(connection, row["ident"]) for row in found)
 
 
 def release(connection: sqlite3.Connection, ticket: PlacementTicket) -> None:

@@ -135,37 +135,63 @@ def get(connection: sqlite3.Connection, ident: str) -> Shift:
     )
     if not stops:
         return shift
+    return _with_stops(shift, tuple(_read_downtime(row) for row in stops))
+
+
+def _with_stops(shift: Shift, stops: tuple[Downtime, ...]) -> Shift:
+    """A copy of a shift carrying its interruptions."""
     return Shift(
         ident=shift.ident,
         dredge=shift.dredge,
         reach=shift.reach,
         began=shift.began,
         ended=shift.ended,
-        downtimes=tuple(_read_downtime(row) for row in stops),
+        downtimes=stops,
     )
+
+
+def _gather(connection: sqlite3.Connection, found: list[sqlite3.Row]) -> tuple[Shift, ...]:
+    """Build a run of shifts, fetching every interruption in one query."""
+    stops: dict[str, list[Downtime]] = {}
+    for row in rows(
+        connection,
+        "SELECT shift, began, ended, reason, note FROM downtime ORDER BY shift, began",
+    ):
+        stops.setdefault(row["shift"], []).append(_read_downtime(row))
+    built = []
+    for row in found:
+        shift = _read_shift(row)
+        mine = stops.get(shift.ident)
+        built.append(shift if not mine else _with_stops(shift, tuple(mine)))
+    return tuple(built)
 
 
 def between(connection: sqlite3.Connection, first: dt.date, last: dt.date) -> tuple[Shift, ...]:
     """Every shift begun in a period, both ends included."""
-    found = rows(
+    return _gather(
         connection,
-        f"SELECT {SHIFT_COLUMNS} FROM shift WHERE began >= ? AND began < ? ORDER BY began",
-        (first.isoformat(), (last + dt.timedelta(days=1)).isoformat()),
+        rows(
+            connection,
+            f"SELECT {SHIFT_COLUMNS} FROM shift WHERE began >= ? AND began < ? ORDER BY began",
+            (first.isoformat(), (last + dt.timedelta(days=1)).isoformat()),
+        ),
     )
-    return tuple(get(connection, row["ident"]) for row in found)
 
 
 def listed(connection: sqlite3.Connection) -> tuple[Shift, ...]:
     """Every shift in the book, oldest first."""
-    found = rows(connection, f"SELECT {SHIFT_COLUMNS} FROM shift ORDER BY began")
-    return tuple(get(connection, row["ident"]) for row in found)
+    return _gather(
+        connection, rows(connection, f"SELECT {SHIFT_COLUMNS} FROM shift ORDER BY began")
+    )
 
 
 def for_reach(connection: sqlite3.Connection, reach: str) -> tuple[Shift, ...]:
     """Every shift worked on one reach, oldest first."""
-    found = rows(
+    return _gather(
         connection,
-        f"SELECT {SHIFT_COLUMNS} FROM shift WHERE reach = ? ORDER BY began",
-        (reach,),
+        rows(
+            connection,
+            f"SELECT {SHIFT_COLUMNS} FROM shift WHERE reach = ? ORDER BY began",
+            (reach,),
+        ),
     )
-    return tuple(get(connection, row["ident"]) for row in found)

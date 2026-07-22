@@ -170,3 +170,28 @@ def test_tickets_for_an_area_come_back_oldest_first(open_book: sqlite3.Connectio
     trips.release(open_book, a_ticket("TR-04188"))
     assert [t.trip for t in trips.tickets_for_area(open_book, "PA-002")] == ["TR-04188"]
     assert trips.tickets_for_area(open_book, "PA-009") == ()
+
+
+def test_a_run_of_trips_carries_its_readings(open_book: sqlite3.Connection) -> None:
+    trips.add(open_book, a_trip("TR-04188", readings=four_readings()))
+    trips.add(open_book, a_trip("TR-04190", dt.date(2025, 4, 5)))
+    found = {t.ident: t for t in trips.listed(open_book)}
+    assert found["TR-04188"].measured
+    assert not found["TR-04190"].measured
+
+
+def test_a_run_is_one_query_for_the_readings(open_book: sqlite3.Connection) -> None:
+    for number in range(20):
+        trips.add(
+            open_book,
+            a_trip(f"TR-{number + 1:05d}", dt.date(2025, 4, 2), readings=four_readings()),
+        )
+    statements: list[str] = []
+    open_book.set_trace_callback(statements.append)
+    try:
+        found = trips.listed(open_book)
+    finally:
+        open_book.set_trace_callback(None)
+    assert len(found) == 20
+    assert all(trip.measured for trip in found)
+    assert len(statements) <= 3, statements

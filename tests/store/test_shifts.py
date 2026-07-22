@@ -146,3 +146,25 @@ def test_shifts_of_a_reach_come_back_oldest_first(open_book: sqlite3.Connection)
         "SH-00022",
     ]
     assert shifts.for_reach(open_book, "RCH-999") == ()
+
+
+def test_a_run_of_shifts_carries_its_interruptions(
+    open_book: sqlite3.Connection,
+) -> None:
+    shifts.add(open_book, a_shift("SH-00021", DAY, a_stop()))
+    shifts.add(open_book, a_shift("SH-00022", NEXT))
+    found = {s.ident: s for s in shifts.listed(open_book)}
+    assert found["SH-00021"].down_minutes == 120
+    assert found["SH-00022"].down_minutes == 0
+
+
+def test_a_run_over_a_period_carries_them_too(open_book: sqlite3.Connection) -> None:
+    shifts.add(open_book, a_shift("SH-00021", DAY, a_stop()))
+    found = shifts.between(open_book, DAY, NEXT)
+    assert found[0].down_minutes == 120
+
+
+def test_a_run_over_a_reach_carries_them_too(open_book: sqlite3.Connection) -> None:
+    shifts.add(open_book, a_shift("SH-00021", DAY, a_stop()))
+    found = shifts.for_reach(open_book, "RCH-012")
+    assert found[0].downtimes[0].note == "squall"
