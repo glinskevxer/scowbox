@@ -29,6 +29,7 @@ How many rows the book holds, table by table.
 The standing rules this program holds a book to.
 
 - `--where` — Print the module each rule lives in.
+- `--about` — Only rules mentioning this word.
 
 ## `scowbox book verify`
 

@@ -114,3 +114,17 @@ LAWS: tuple[Law, ...] = (
 def subjects() -> tuple[str, ...]:
     """Every subject the laws are grouped under."""
     return tuple(law.subject for law in LAWS)
+
+
+def about(subject: str) -> tuple[Law, ...]:
+    """Every rule whose subject or wording mentions a word.
+
+    Matched loosely on purpose. Somebody looking up what happens to overdepth
+    does not know whether it is filed under the prism or under the sections,
+    and a lookup that answers nothing to an obviously relevant word is a lookup
+    nobody uses twice.
+    """
+    wanted = subject.strip().lower()
+    if not wanted:
+        return LAWS
+    return tuple(law for law in LAWS if wanted in law.subject.lower() or wanted in law.rule.lower())

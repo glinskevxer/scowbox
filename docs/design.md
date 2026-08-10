@@ -38,6 +38,13 @@ where two of the curves cross so that a section answers the same number
 whatever spacing the survey ran to. `scowbox.section.volume` is average end
 area, with the two rules that travel with it.
 
+## The book is read in runs, not a row at a time
+
+`scowbox.store.trips.for_reach` and `scowbox.store.shifts.for_reach` fetch
+their children in one query each rather than one a parent. That started as two
+queries a trip, which was four hundred round trips on a season report and is
+the only performance problem this package has ever had.
+
 ## Nothing asks what day it is
 
 Every date is a date somebody wrote down. `scowbox.tools.check_clock` enforces

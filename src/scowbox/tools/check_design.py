@@ -8,6 +8,10 @@ So the note names things in backticks, and every dotted name in backticks has
 to resolve: a module of this package, or an attribute of one. Prose is left
 alone, and so is anything in backticks that is not dotted, because that is a
 command or a column and this check has no business with those.
+
+The standing rules in `scowbox.laws` are checked the same way, and for the same
+reason. Each of them names the module that enforces it, and a rule pointing at
+a module that has gone is a rule nobody is enforcing.
 """
 
 from __future__ import annotations
@@ -17,6 +21,7 @@ import re
 import sys
 from pathlib import Path
 
+from scowbox.laws import LAWS
 from scowbox.tools.scan import PACKAGE, project_root, report
 
 NAME = "check_design"
@@ -56,13 +61,30 @@ def resolves(name: str) -> bool:
 
 
 def findings(text: str | None = None) -> list[str]:
-    """Every name the note mentions that is not there any more."""
+    """Every name the note or the standing rules mention that is not there."""
     where = document_path()
     if text is None and not where.exists():
         return [f"{DOCUMENT} is missing"]
-    return [
+    out = [
         f"{DOCUMENT} names {name}, which is not there" for name in named(text) if not resolves(name)
     ]
+    out.extend(
+        f"the {law.subject} law names {law.where}, which is not there"
+        for law in LAWS
+        if not resolves(law.where)
+    )
+    return out
+
+
+def unlawed() -> list[str]:
+    """Standing rules whose module the design note never mentions.
+
+    Not a finding. A law can live in a module the note does not walk through,
+    and several do. It is here because the two documents drifting apart is the
+    thing worth looking at once a year, and nobody looks at what nothing prints.
+    """
+    walked = set(named())
+    return sorted({law.where for law in LAWS} - walked)
 
 
 def main() -> int:

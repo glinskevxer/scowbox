@@ -4,7 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-from scowbox.tools.check_design import document_path, findings, main, named, resolves
+from scowbox.laws import LAWS
+from scowbox.tools.check_design import (
+    document_path,
+    findings,
+    main,
+    named,
+    resolves,
+    unlawed,
+)
 
 
 def test_the_note_is_in_the_checkout() -> None:
@@ -77,3 +85,27 @@ def test_the_check_fails_when_the_note_is_wrong() -> None:
 
 def test_a_holder_that_does_not_import_does_not_resolve() -> None:
     assert not resolves("scowbox.invented.thing.deeper")
+
+
+def test_every_law_names_a_module_that_resolves() -> None:
+    assert all(resolves(law.where) for law in LAWS)
+
+
+def test_a_law_pointing_at_nothing_would_be_found() -> None:
+    where = [law.where for law in LAWS]
+    assert "scowbox.units.fathoms" not in where
+    assert not resolves("scowbox.units.fathoms")
+
+
+def test_the_laws_are_checked_alongside_the_note() -> None:
+    assert findings("nothing in backticks here") == []
+
+
+def test_the_rules_the_note_does_not_walk_through_are_listed() -> None:
+    found = unlawed()
+    assert all(name.startswith("scowbox.") for name in found)
+    assert found == sorted(found)
+
+
+def test_the_note_walks_through_most_of_them() -> None:
+    assert len(unlawed()) < len(LAWS)

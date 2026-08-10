@@ -80,3 +80,13 @@ def test_the_laws_print_one_a_line(run: Book) -> None:
 def test_the_laws_can_name_where_they_live(run: Book) -> None:
     out = run("book", "laws", "--where")
     assert "scowbox.units.depth" in out
+
+
+def test_the_laws_can_be_narrowed_to_a_word(run: Book) -> None:
+    out = run("book", "laws", "--about", "prism")
+    assert "prism" in out
+    assert "depths" not in out
+
+
+def test_a_word_no_rule_mentions_says_so(run: Book) -> None:
+    assert "no rule mentions" in run("book", "laws", "--about", "fathoms")

@@ -5,7 +5,7 @@ from __future__ import annotations
 import click
 
 from scowbox.cli.context import opened
-from scowbox.laws import LAWS
+from scowbox.laws import about
 from scowbox.store.book import counts
 from scowbox.store.care import backup, compact, health
 from scowbox.store.migrations import latest
@@ -68,9 +68,14 @@ def compact_book(ctx: click.Context) -> None:
 
 @book.command("laws")
 @click.option("--where", is_flag=True, help="Print the module each rule lives in.")
-def laws(where: bool) -> None:
+@click.option("--about", "subject", default="", help="Only rules mentioning this word.")
+def laws(where: bool, subject: str) -> None:
     """The standing rules this program holds a book to."""
-    for law in LAWS:
+    found = about(subject)
+    if not found:
+        click.echo(f"no rule mentions {subject!r}")
+        return
+    for law in found:
         click.echo(law.line())
         if where:
             click.echo(f"{'':<14}{law.where}")
