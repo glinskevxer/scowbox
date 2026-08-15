@@ -90,3 +90,24 @@ def test_the_laws_can_be_narrowed_to_a_word(run: Book) -> None:
 
 def test_a_word_no_rule_mentions_says_so(run: Book) -> None:
     assert "no rule mentions" in run("book", "laws", "--about", "fathoms")
+
+
+def test_a_book_with_an_orphan_row_does_not_verify(run: Book, tmp_path: Path) -> None:
+    from scowbox.store.book import book as open_book
+
+    with open_book(tmp_path / "book.sqlite3") as connection:
+        connection.execute("PRAGMA foreign_keys = OFF")
+        connection.execute(
+            "INSERT INTO survey"
+            " (ident, reach, kind, taken_on, vessel, transducer_draft, gauge)"
+            " VALUES ('SV-0031', 'RCH-999', 'before', '2026-08-10', 'Cape Fear', 2.5, '')"
+        )
+    out = run("book", "verify", ok=False)
+    assert "orphan" in out
+    assert "NOT SOUND" in out
+
+
+def test_a_backup_into_a_directory_that_is_not_there_is_made(run: Book, tmp_path: Path) -> None:
+    where = tmp_path / "elsewhere" / "copy.sqlite3"
+    run("book", "backup", str(where))
+    assert where.exists()

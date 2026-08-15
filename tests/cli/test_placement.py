@@ -85,3 +85,36 @@ def test_an_empty_cell_has_no_rate_to_forecast_from(run: Book) -> None:
 
 def test_an_area_that_is_not_there_cannot_be_forecast(run: Book) -> None:
     run("placement", "forecast", "PA-009", "--through", "2026-01-05", ok=False)
+
+
+def test_a_cell_forecasts_once_it_has_tickets(run: Book, tmp_path: Path) -> None:
+    run(*CELL)
+    run(
+        "reach", "add", "RCH-012", "Lower Range",
+        "--begin", "100+00", "--end", "140+00",
+        "--bottom", "400", "--depth", "42", "--method", "scow",
+    )  # fmt: skip
+    run("scow", "add", "SC-004", "Dixie 41", "--length", "180", "--width", "42", "--depth", "14")
+    for number, day in enumerate(("2026-01-05", "2026-01-06", "2026-01-07")):
+        ident = f"TR-{number + 1:05d}"
+        run(
+            "trip", "add", ident, "--scow", "SC-004", "--reach", "RCH-012",
+            "--on", day, "--to", "PA-004",
+        )  # fmt: skip
+        run(
+            "trip", "measure", ident,
+            "--light", "12", "--pb", "4", "--sb", "4", "--ps", "4", "--ss", "4",
+        )  # fmt: skip
+        run(
+            "trip", "release", ident, "--at", "PA-004",
+            "--on", day, "--time", "11:20", "--grade", "unsuitable",
+        )  # fmt: skip
+    out = run("placement", "forecast", "PA-004", "--through", "2026-01-07")
+    assert "loads      3 over 3 days" in out
+    assert "cy a day" in out
+    assert "full on" in out
+
+
+def test_a_filling_cell_shows_the_room_left(run: Book) -> None:
+    run(*CELL)
+    assert "0.0% used" in run("placement", "show", "PA-004")

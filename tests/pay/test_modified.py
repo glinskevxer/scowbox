@@ -128,3 +128,27 @@ def test_the_applied_numbers_come_back_in_order() -> None:
         [a_time("P00005", dt.date(2025, 9, 1), 20), a_time("P00003", dt.date(2025, 6, 1), 45)],
     )
     assert got.numbers == ("P00003", "P00005")
+
+
+def test_a_new_item_with_no_price_cannot_be_built() -> None:
+    with pytest.raises(Exception, match="price"):
+        Modification("P00007", dt.date(2025, 8, 1), Change.ITEM, "Trawling", item="LI-0020")
+
+
+def test_a_modified_contract_keeps_everything_else() -> None:
+    got = apply(BASE, [a_time("P00003", dt.date(2025, 6, 1), 45)])
+    assert got.contract.number == BASE.number
+    assert got.contract.retainage == BASE.retainage
+    assert got.contract.liquidated == BASE.liquidated
+
+
+def test_the_applied_modifications_come_back_on_the_result() -> None:
+    got = apply(BASE, [a_time("P00003", dt.date(2025, 6, 1), 45)])
+    assert got.applied[0].number == "P00003"
+    assert got.count == 1
+
+
+def test_time_taken_away_shortens_the_contract() -> None:
+    got = apply(BASE, [a_time("P00003", dt.date(2025, 6, 1), -30)])
+    assert got.contract.days == 335
+    assert got.added_days == -30
