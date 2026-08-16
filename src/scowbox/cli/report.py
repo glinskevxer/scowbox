@@ -21,6 +21,7 @@ from scowbox.report import reach as reach_report
 from scowbox.report import season as season_report
 from scowbox.report import section as section_report
 from scowbox.report import shoaling as shoaling_report
+from scowbox.report import window as window_report
 
 
 @click.group()
@@ -216,4 +217,27 @@ def closeout(ctx: click.Context, material: str, closed_through: dt.datetime | No
             bulking_of(material),
             closed_through=closed_through.date() if closed_through else None,
         )
+    _show(lines)
+
+
+@report.command("windows")
+@click.option(
+    "--from",
+    "first",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="First day of the period.",
+)
+@click.option(
+    "--to",
+    "last",
+    type=click.DateTime(["%Y-%m-%d"]),
+    required=True,
+    help="Last day of the period.",
+)
+@click.pass_context
+def windows(ctx: click.Context, first: dt.datetime, last: dt.datetime) -> None:
+    """How many days each reach is workable over a period."""
+    with opened(ctx) as connection:
+        lines = window_report.render(connection, first.date(), last.date())
     _show(lines)

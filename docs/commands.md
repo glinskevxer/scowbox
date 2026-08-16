@@ -373,6 +373,13 @@ How fast the channel is filling back in.
 - `--min-days` — Shortest interval a rate is taken over.
 - `--reach` — List the quiet intervals on this reach.
 
+## `scowbox report windows`
+
+How many days each reach is workable over a period.
+
+- `--from` — First day of the period.
+- `--to` — Last day of the period.
+
 ## `scowbox scow`
 
 The scow fleet.

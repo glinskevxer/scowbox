@@ -207,3 +207,18 @@ def test_the_export_writes_its_files(run: Book, tmp_path: Path) -> None:
     out = run("report", "export", str(tmp_path / "sheets"))
     assert "reaches.csv" in out
     assert (tmp_path / "sheets" / "estimates.csv").exists()
+
+
+def test_the_window_report_counts_the_workable_days(run: Book) -> None:
+    run(
+        "window", "add", "loggerhead", "--from", "2026-06-01", "--to", "2026-06-10",
+        "--restriction", "closed", "--authority", "NMFS",
+    )  # fmt: skip
+    out = run("report", "windows", "--from", "2026-06-01", "--to", "2026-06-30")
+    assert "Windows 2026-06-01 to 2026-06-30" in out
+    assert "workable" in out
+    assert "1 windows touch this period" in out
+
+
+def test_the_window_report_on_a_backwards_period_fails(run: Book) -> None:
+    run("report", "windows", "--from", "2026-06-30", "--to", "2026-06-01", ok=False)
