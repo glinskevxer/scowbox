@@ -68,17 +68,24 @@ def document_path() -> Path:
     return project_root() / DOCUMENT
 
 
-def write() -> Path:
-    """Rewrite the document from the live schema."""
-    where = document_path()
+def write(where: Path | None = None) -> Path:
+    """Rewrite the document, somewhere else if the caller says so.
+
+    The override exists for the tests. Checking that a stale document is caught
+    means writing a stale one, and doing that in the checkout means two runs of
+    the suite at once tread on each other and fail for a reason that has
+    nothing to do with either of them.
+
+    Rewrite the document from the live schema."""
+    where = where or document_path()
     where.parent.mkdir(parents=True, exist_ok=True)
     where.write_text("\n".join(live_schema()) + "\n", encoding="utf-8")
     return where
 
 
-def findings() -> list[str]:
+def findings(where: Path | None = None) -> list[str]:
     """Whether the written schema still matches the code."""
-    where = document_path()
+    where = where or document_path()
     if not where.exists():
         return [f"{DOCUMENT} is missing; write it with the tool"]
     wanted = "\n".join(live_schema()) + "\n"

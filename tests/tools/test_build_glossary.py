@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from scowbox.model.channel import Method
@@ -63,25 +65,21 @@ def test_the_terms_are_the_member_values() -> None:
     assert len(found) > 25
 
 
-def test_a_stale_document_is_found(capsys: pytest.CaptureFixture[str]) -> None:
-    where = document_path()
-    held = where.read_text(encoding="utf-8")
-    try:
-        where.write_text(held + "\nsomething else\n", encoding="utf-8")
-        assert main(["--check"]) == 1
-        assert "out of date" in capsys.readouterr().out
-    finally:
-        where.write_text(held, encoding="utf-8")
+def test_a_stale_document_is_found(tmp_path: Path) -> None:
+    where = tmp_path / "glossary.md"
+    write(where)
+    where.write_text(where.read_text(encoding="utf-8") + "\nelse\n", encoding="utf-8")
+    assert "out of date" in findings(where)[0]
 
 
-def test_a_missing_document_is_found() -> None:
-    where = document_path()
-    held = where.read_text(encoding="utf-8")
-    try:
-        where.unlink()
-        assert "is missing" in findings()[0]
-    finally:
-        where.write_text(held, encoding="utf-8")
+def test_a_missing_document_is_found(tmp_path: Path) -> None:
+    assert "is missing" in findings(tmp_path / "nothing.md")[0]
+
+
+def test_a_freshly_written_document_is_current(tmp_path: Path) -> None:
+    where = tmp_path / "deep" / "glossary.md"
+    assert write(where) == where
+    assert findings(where) == []
 
 
 def test_writing_the_glossary_puts_it_back(capsys: pytest.CaptureFixture[str]) -> None:
@@ -91,8 +89,9 @@ def test_writing_the_glossary_puts_it_back(capsys: pytest.CaptureFixture[str]) -
     assert document_path().read_text(encoding="utf-8") == held
 
 
-def test_write_returns_where_it_wrote() -> None:
+def test_the_checkout_copy_is_the_one_the_check_reads() -> None:
     assert write() == document_path()
+    assert findings() == []
 
 
 def test_an_enum_with_no_docstring_still_gets_a_section() -> None:

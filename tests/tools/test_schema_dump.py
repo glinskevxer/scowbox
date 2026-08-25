@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from scowbox.store.migrations import latest
@@ -53,34 +55,25 @@ def test_the_migration_indentation_is_taken_off() -> None:
     assert "\n                ident TEXT PRIMARY KEY," not in text
 
 
-def test_a_stale_document_is_found(capsys: pytest.CaptureFixture[str]) -> None:
-    where = document_path()
-    held = where.read_text(encoding="utf-8")
-    try:
-        where.write_text(held + "\nsomething else\n", encoding="utf-8")
-        assert findings() != []
-        assert main(["--check"]) == 1
-        assert "out of date" in capsys.readouterr().out
-    finally:
-        where.write_text(held, encoding="utf-8")
+def test_a_stale_document_is_found(tmp_path: Path) -> None:
+    where = tmp_path / "schema.md"
+    write(where)
+    where.write_text(where.read_text(encoding="utf-8") + "\nelse\n", encoding="utf-8")
+    assert "out of date" in findings(where)[0]
 
 
-def test_a_missing_document_is_found() -> None:
-    where = document_path()
-    held = where.read_text(encoding="utf-8")
-    try:
-        where.unlink()
-        assert "is missing" in findings()[0]
-    finally:
-        where.write_text(held, encoding="utf-8")
+def test_a_missing_document_is_found(tmp_path: Path) -> None:
+    assert "is missing" in findings(tmp_path / "nothing.md")[0]
 
 
-def test_writing_puts_it_back(capsys: pytest.CaptureFixture[str]) -> None:
+def test_a_freshly_written_document_is_current(tmp_path: Path) -> None:
+    where = tmp_path / "deep" / "schema.md"
+    assert write(where) == where
+    assert findings(where) == []
+
+
+def test_writing_the_document_reports_where(capsys: pytest.CaptureFixture[str]) -> None:
     held = document_path().read_text(encoding="utf-8")
     assert main([]) == 0
     assert "wrote" in capsys.readouterr().out
     assert document_path().read_text(encoding="utf-8") == held
-
-
-def test_write_returns_where_it_wrote() -> None:
-    assert write() == document_path()

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from scowbox.tools.build_docs import document_path, findings, main, reference, write
@@ -51,28 +53,23 @@ def test_the_book_option_is_on_the_top_level_group_only() -> None:
     assert text.count("`--book`") == 0
 
 
-def test_a_stale_document_is_found(capsys: pytest.CaptureFixture[str]) -> None:
-    where = document_path()
-    held = where.read_text(encoding="utf-8")
-    try:
-        where.write_text(held + "\nsomething else\n", encoding="utf-8")
-        assert main(["--check"]) == 1
-        assert "out of date" in capsys.readouterr().out
-    finally:
-        where.write_text(held, encoding="utf-8")
+def test_a_stale_document_is_found(tmp_path: Path) -> None:
+    where = tmp_path / "commands.md"
+    write(where)
+    where.write_text(where.read_text(encoding="utf-8") + "\nelse\n", encoding="utf-8")
+    assert "out of date" in findings(where)[0]
 
 
-def test_a_missing_document_is_found() -> None:
-    where = document_path()
-    held = where.read_text(encoding="utf-8")
-    try:
-        where.unlink()
-        assert "is missing" in findings()[0]
-    finally:
-        where.write_text(held, encoding="utf-8")
+def test_a_missing_document_is_found(tmp_path: Path) -> None:
+    assert "is missing" in findings(tmp_path / "nothing.md")[0]
 
 
-def test_writing_puts_it_back() -> None:
-    held = document_path().read_text(encoding="utf-8")
+def test_a_freshly_written_document_is_current(tmp_path: Path) -> None:
+    where = tmp_path / "deep" / "commands.md"
+    assert write(where) == where
+    assert findings(where) == []
+
+
+def test_the_checkout_copy_is_the_one_the_check_reads() -> None:
     assert write() == document_path()
-    assert document_path().read_text(encoding="utf-8") == held
+    assert findings() == []
