@@ -172,3 +172,62 @@ def test_a_log_for_a_dredge_that_is_not_there_is_refused(run: Book, tmp_path: Pa
     out = run("shift", "load", log)
     assert "0 shifts loaded" in out
     assert "1 rows the book refused" in out
+
+
+TRIP_HEAD = "trip,scow,reach,day,placement,light,pb,sb,ps,ss"
+
+
+def a_trip_sheet(tmp_path: Path, *rows: str) -> str:
+    where = tmp_path / "trips.csv"
+    where.write_text(TRIP_HEAD + "\n" + "\n".join(rows) + "\n", encoding="utf-8")
+    return str(where)
+
+
+def a_scow_and_area(run: Book) -> None:
+    run("scow", "add", "SC-004", "Dixie 41", "--length", "180", "--width", "42", "--depth", "14")
+    run(
+        "placement", "add", "PA-002", "Wilmington ODMDS",
+        "--ground", "ocean site", "--permit", "SAW-2019-01142",
+    )  # fmt: skip
+
+
+def test_a_matching_log_and_sheet_need_nothing_fixed(run: Book, tmp_path: Path) -> None:
+    a_scow_and_area(run)
+    log = a_log(tmp_path, "SH-00030,DR-003,RCH-012,2026-08-28,06:00,18:00")
+    sheet = a_trip_sheet(tmp_path, "TR-00030,SC-004,RCH-012,2026-08-28,PA-002,,,,,")
+    out = run("shift", "preflight", log, "--trips", sheet)
+    assert "1 shifts, 1 trips" in out
+    assert "nothing to fix before loading" in out
+
+
+def test_a_trip_on_a_day_with_no_shift_is_reported(run: Book, tmp_path: Path) -> None:
+    a_scow_and_area(run)
+    log = a_log(tmp_path, "SH-00030,DR-003,RCH-012,2026-08-28,06:00,18:00")
+    sheet = a_trip_sheet(tmp_path, "TR-00030,SC-004,RCH-012,2026-08-29,PA-002,,,,,")
+    out = run("shift", "preflight", log, "--trips", sheet)
+    assert "no shift for" in out
+
+
+def test_a_mechanical_shift_with_no_trip_is_reported(run: Book, tmp_path: Path) -> None:
+    a_scow_and_area(run)
+    log = a_log(tmp_path, "SH-00030,DR-003,RCH-012,2026-08-28,06:00,18:00")
+    sheet = a_trip_sheet(tmp_path, "TR-00030,SC-004,RCH-012,2026-08-29,PA-002,,,,,")
+    out = run("shift", "preflight", log, "--trips", sheet)
+    assert "loads scows and the sheet has no trip against it" in out
+
+
+def test_a_name_the_book_does_not_hold_fails_the_preflight(run: Book, tmp_path: Path) -> None:
+    a_scow_and_area(run)
+    log = a_log(tmp_path, "SH-00030,DR-003,RCH-012,2026-08-28,06:00,18:00")
+    sheet = a_trip_sheet(tmp_path, "TR-00030,SC-009,RCH-012,2026-08-28,PA-002,,,,,")
+    out = run("shift", "preflight", log, "--trips", sheet, ok=False)
+    assert "unknown scow" in out
+    assert "name something the book does not hold" in out
+
+
+def test_a_line_that_will_not_read_is_counted_in_the_preflight(run: Book, tmp_path: Path) -> None:
+    a_scow_and_area(run)
+    log = a_log(tmp_path, "SH-30,DR-003,RCH-012,2026-08-28,06:00,18:00")
+    sheet = a_trip_sheet(tmp_path, "TR-00030,SC-004,RCH-012,2026-08-28,PA-002,,,,,")
+    out = run("shift", "preflight", log, "--trips", sheet)
+    assert "1 lines would not read" in out

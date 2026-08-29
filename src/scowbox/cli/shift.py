@@ -14,6 +14,10 @@ from scowbox.feed.shiftlog import (
     parse_files,
     refused,
 )
+from scowbox.feed.trips import kept as kept_trips
+from scowbox.feed.trips import parse_file as parse_trips
+from scowbox.feed.trips import refused as refused_trips
+from scowbox.job.preflight import preflight
 from scowbox.model.plant import Dredge, Plant
 from scowbox.model.shift import Downtime, Reason, Shift
 from scowbox.pay.timeloss import credited_days, standby_days, tally
@@ -206,3 +210,42 @@ def load_log(ctx: click.Context, shifts_file: str, stops: str | None, show_refus
             click.echo(f"  line {reading.line}: {reading.trouble}")
         for line in already:
             click.echo(f"  {line}")
+
+
+@shift.command("preflight")
+@click.argument("shifts_file", metavar="SHIFTS", type=click.Path(exists=True, dir_okay=False))
+@click.option(
+    "--trips",
+    "trips_file",
+    type=click.Path(exists=True, dir_okay=False),
+    required=True,
+    help="The trip sheet to read against the log.",
+)
+@click.option(
+    "--stops",
+    type=click.Path(exists=True, dir_okay=False),
+    default=None,
+    help="The interruption file that goes with the log.",
+)
+@click.pass_context
+def preflight_files(
+    ctx: click.Context, shifts_file: str, trips_file: str, stops: str | None
+) -> None:
+    """Read a shift log and a trip sheet against each other before loading them."""
+    worked, stopped = parse_files(shifts_file, stops)
+    sheet = parse_trips(trips_file)
+    with opened(ctx) as connection:
+        found = preflight(connection, kept_shifts(worked), kept_trips(sheet))
+    click.echo(f"{found.shifts:,} shifts, {found.trips:,} trips")
+    unread = len(refused(worked)) + len(refused(stopped)) + len(refused_trips(sheet))
+    if unread:
+        click.echo(f"{unread:,} lines would not read")
+    if found.clean and not unread:
+        click.echo("nothing to fix before loading")
+        return
+    for finding in found.findings:
+        click.echo(f"  {finding.kind}: {finding.subject} on {finding.day}")
+        click.echo(f"      {finding.detail}")
+    if found.blocking:
+        click.echo(f"{len(found.blocking):,} of these name something the book does not hold")
+        raise SystemExit(1)

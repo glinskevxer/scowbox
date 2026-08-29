@@ -438,6 +438,15 @@ Arguments: `ident`
 - `--from` — Start of the shift, such as 06:00.
 - `--to` — End of the shift, such as 18:00.
 
+## `scowbox shift preflight`
+
+Read a shift log and a trip sheet against each other before loading them.
+
+Arguments: `shifts_file`
+
+- `--trips` — The trip sheet to read against the log.
+- `--stops` — The interruption file that goes with the log.
+
 ## `scowbox shift stop`
 
 Add an interruption to a shift already logged.
